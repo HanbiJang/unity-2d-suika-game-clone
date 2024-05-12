@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
+using System;
 
 public enum EffectSound
 {
@@ -54,6 +55,7 @@ public class FruitManager : MonoBehaviour
     float SizeUp = 0.2f;
 
     bool isGameRun = false;
+    bool isGameOver = false;
     int nextFruitLevel = 1;
     GameObject nextFruitModel;
 
@@ -64,6 +66,8 @@ public class FruitManager : MonoBehaviour
     float gap = 0.25f;
     bool isSimulated = false; //새 과일이 물리력 받는지에 대한 bool
     float targetSize;
+
+    PlayFabManager playFabManager;
 
     public void makeGameOver()
     {
@@ -110,6 +114,8 @@ public class FruitManager : MonoBehaviour
         CreateFruit(); //화면에서 창조를함.
         StopRigidSim(); //리지드 바디를 잠시 멈춘다
         isGameRun = true;
+
+        playFabManager = GameObject.Find("PlayFabManager").GetComponent<PlayFabManager>();
     }
 
     void Update()
@@ -151,7 +157,11 @@ public class FruitManager : MonoBehaviour
         }
         else //게임 오버 판단 - GameOverLine
         {
-            GameOver();
+            if (!isGameOver)
+            {
+                GameOver();
+                isGameOver = true; 
+            }
         }
 
     }
@@ -184,7 +194,7 @@ public class FruitManager : MonoBehaviour
     void ShowNextFruitModel()
     {
         //생성
-        nextFruitLevel = (int)Random.Range(minLevel, fruitMaxLevel + 1);
+        nextFruitLevel = (int)UnityEngine.Random.Range(minLevel, fruitMaxLevel + 1);
 
         //레벨에 맞는 크기 적용 (미니 사이즈)
         float size = SizeUp * (nextFruitLevel - 1);
@@ -274,6 +284,28 @@ public class FruitManager : MonoBehaviour
 
         //리플레이 버튼 띄우기
         //...
+
+        //유저의 역대 최대 점수를 넘겼다면 플레이팹에 저장하기
+        //최대 점수 비교
+        //플레이팹에 점수 저장
+        if (playFabManager.isLogOn == true)
+        {     
+            playFabManager.SetStat(userScore); //점수 저장
+            if(userScore> playFabManager.playerBestScore)
+                playFabManager.SetBestScore(userScore);
+        }
+        else {
+            playFabManager.LoginToPlayFab(null);
+            //점수 저장
+            playFabManager.LoginToPlayFab(() =>
+            {
+                // 로그인 성공 후, 점수 저장 
+                playFabManager.SetStat(userScore); //점수 저장
+                if (userScore > playFabManager.playerBestScore)
+                    playFabManager.SetBestScore(userScore);
+            });
+        }
+
     }
 
     void StopRigidSim()
@@ -298,7 +330,7 @@ public class FruitManager : MonoBehaviour
                 SoundChannels[channelNum].Play();
                 break;
             case EffectSound.Merge: //1과 2중에 랜덤하게 재생
-                SoundChannels[channelNum].clip = audioClips[(int)Random.Range(1f, 2.1f)];
+                SoundChannels[channelNum].clip = audioClips[(int)UnityEngine.Random.Range(1f, 2.1f)];
                 SoundChannels[channelNum].Play();
                 break;
         }

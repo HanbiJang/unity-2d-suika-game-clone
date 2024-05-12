@@ -16,5 +16,7 @@ public class BtnStart : MonoBehaviour
 
     public void StartFunc() {
         SceneManager.LoadSceneAsync(nextSceneName);
+        PlayFabManager playFabManager = GameObject.Find("PlayFabManager").GetComponent<PlayFabManager>();
+        playFabManager.curSceneNum = 1;
     }
 }
