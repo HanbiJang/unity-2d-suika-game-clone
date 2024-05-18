@@ -214,6 +214,8 @@ public class FruitManager : MonoBehaviour
         //생성
         int randomLevel = nextFruitLevel; /*(int)Random.Range(minLevel, fruitMaxLevel + 1);*/
         newFruitGameObject = Instantiate(FruitPrefab, FruitParent.transform, false) as GameObject;
+        float randRotation = UnityEngine.Random.Range(-180f, 180f);
+        newFruitGameObject.transform.localRotation = Quaternion.Euler(0, 0, randRotation);
 
         //레벨에 맞는 크기 적용 & 애니메이션 추가
         targetSize = SizeUp * (randomLevel - 1) + 1;
@@ -282,7 +284,7 @@ public class FruitManager : MonoBehaviour
         groundControl.isPlayed = false;
         Time.timeScale = 0;
 
-        //리플레이 버튼 띄우기
+        //게임 결과 & 리플레이 버튼 띄우기
         //...
 
         //유저의 역대 최대 점수를 넘겼다면 플레이팹에 저장하기

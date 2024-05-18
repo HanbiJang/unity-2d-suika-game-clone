@@ -13,10 +13,13 @@ public class BtnStart : MonoBehaviour
         Button thisBtn = this.gameObject.GetComponent<Button>();
         thisBtn.onClick.AddListener(StartFunc);
     }
-
+    
+    public LoadingSceneController loadingSceneController; 
     public void StartFunc() {
-        SceneManager.LoadSceneAsync(nextSceneName);
         PlayFabManager playFabManager = GameObject.Find("PlayFabManager").GetComponent<PlayFabManager>();
         playFabManager.curSceneNum = 1;
+
+        loadingSceneController = GameObject.Find("LoadingSceneController").GetComponent<LoadingSceneController>();
+        loadingSceneController.MyLoadingScene();
     }
 }

@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.SceneManagement;
 
 public class PlayFabManager : MonoBehaviour
 {
@@ -43,6 +44,7 @@ public class PlayFabManager : MonoBehaviour
 
     }
     bool isNameSet = false;
+    bool isBestScoreSet = false;
     private void Update()
     {
         if (!isBestScoreLoaded && curSceneNum == 1)
@@ -55,6 +57,13 @@ public class PlayFabManager : MonoBehaviour
         {
             isNameSet = true;
             GetDisplayNameAndSet();
+        }
+
+        if (!isBestScoreSet && isBestScoreLoaded && SceneManager.GetActiveScene().buildIndex == 1)
+        {  
+            BestScoreText = GameObject.Find("BestScoreText").GetComponent<Text>();
+            if (BestScoreText) BestScoreText.text = string.Format("{0:00000}", playerBestScore);
+            isBestScoreSet = true;
         }
     }
 
@@ -100,12 +109,20 @@ public class PlayFabManager : MonoBehaviour
 
     void CreateGuestIdAndLogin()
     {
+        //예전 정보 삭제
+        DeletePreData();
+
         customId = GetRandomString(16);
         PlayerPrefs.SetString("customId", customId);
         Debug.Log("customId : " + customId);
 
         var request = new LoginWithCustomIDRequest { CustomId = customId, CreateAccount = true };
         PlayFabClientAPI.LoginWithCustomID(request, OnCreateLoginSuccess, OnLoginFailure);
+    }
+
+    void DeletePreData()
+    {
+        PlayerPrefs.DeleteAll();
     }
 
     void SetDisplayName(string name)
@@ -256,9 +273,7 @@ public class PlayFabManager : MonoBehaviour
             }
         }
 
-        //텍스트에 표시하기
-        BestScoreText = GameObject.Find("BestScoreText").GetComponent<Text>();
-        if (BestScoreText) BestScoreText.text = string.Format("{0:00000}", playerBestScore);
+        //텍스트에 표시하기 (플래그)
         isBestScoreLoaded = true;
     }
 
