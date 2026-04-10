@@ -11,46 +11,50 @@ public enum EffectSound
 }
 public class FruitManager : MonoBehaviour
 {
-    public GameObject FruitPrefab; //°úÀÏÀÇ ÇÁ¸®Æé
-    GameObject FruitParent; //°úÀÏ ºÎ¸ğ
-    public GameObject newFruitGameObject { get; set; } //»õ °úÀÏ
-    GroundControl groundControl; //¶¥ ½ºÅ©¸³Æ® ( ¼Ò¸® ±â´É ) 
+    [SerializeField] private GameObject gameOverCanvas;
 
-    Vector2 ClickPoint; //Å¬¸¯µÈ ÁÂÇ¥
-    List<Fruit> fruits; //°úÀÏÀÇ ¸®½ºÆ®
-    bool isClicked; //Å¬¸¯µÇ¾ú´ÂÁö. true¸é Å¬¸¯ µ¿ÀÛÀ» ¸·´Â´Ù
-    public bool isReady; //true¸é ½Ã°£ 1ÃÊ Áö³µÀ½À» È®ÀÎ
+    public GameObject FruitPrefab; //ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+    GameObject FruitParent; //ï¿½ï¿½ï¿½ï¿½ ï¿½Î¸ï¿½
+    public GameObject newFruitGameObject { get; set; } //ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
+    GroundControl groundControl; //ï¿½ï¿½ ï¿½ï¿½Å©ï¿½ï¿½Æ® ( ï¿½Ò¸ï¿½ ï¿½ï¿½ï¿½ ) 
+
+    Vector2 ClickPoint; //Å¬ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½Ç¥
+    List<Fruit> fruits; //ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½Æ®
+    bool isClicked; //Å¬ï¿½ï¿½ï¿½Ç¾ï¿½ï¿½ï¿½ï¿½ï¿½. trueï¿½ï¿½ Å¬ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½Â´ï¿½
+    public bool isReady; //trueï¿½ï¿½ ï¿½Ã°ï¿½ 1ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ È®ï¿½ï¿½
     float speed = 10f;
-    Vector3 target; //¸ñÇ¥ ÁöÁ¡
+    Vector3 target; //ï¿½ï¿½Ç¥ ï¿½ï¿½ï¿½ï¿½
 
-    public const int minLevel = 1; //ÃÖ¼Ò ·¹º§ (°íÁ¤)
-    public int fruitMaxLevel = 1; //¾À»óÀÇ °úÀÏ ÃÖ´ë ·¹º§
-    public const int maxLevel = 11; //½ÇÁ¦ ÃÖ´ë ·¹º§ 
+    public const int minLevel = 1; //ï¿½Ö¼ï¿½ ï¿½ï¿½ï¿½ï¿½ (ï¿½ï¿½ï¿½ï¿½)
+    public int fruitMaxLevel = 1; //ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½Ö´ï¿½ ï¿½ï¿½ï¿½ï¿½
+    public const int maxLevel = 11; //ï¿½ï¿½ï¿½ï¿½ ï¿½Ö´ï¿½ ï¿½ï¿½ï¿½ï¿½ 
 
-    //°úÀÏ ½ºÇÁ¶óÀÌÆ®
-    public List<Sprite> fruitSprite; //ÀÎ½ºÆåÅÍ¿¡¼­ ÇÒ´ç
+    //ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Æ®
+    public List<Sprite> fruitSprite; //ï¿½Î½ï¿½ï¿½ï¿½ï¿½Í¿ï¿½ï¿½ï¿½ ï¿½Ò´ï¿½
 
-    //ÆÄÆ¼Å¬
+    //ï¿½ï¿½Æ¼Å¬
     GameObject EffectParent;
-    public GameObject MergeEffectGameObject; //°ÔÀÓ¿ÀºêÁ§Æ®, ÀÎ½ºÆåÅÍ ÇÒ´ç
-    public GameObject ScoreEffectGameObject; //°ÔÀÓ¿ÀºêÁ§Æ®, ÀÎ½ºÆåÅÍ ÇÒ´ç
+    public GameObject MergeEffectGameObject; //ï¿½ï¿½ï¿½Ó¿ï¿½ï¿½ï¿½ï¿½ï¿½Æ®, ï¿½Î½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½Ò´ï¿½
+    public GameObject ScoreEffectGameObject; //ï¿½ï¿½ï¿½Ó¿ï¿½ï¿½ï¿½ï¿½ï¿½Æ®, ï¿½Î½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½Ò´ï¿½
 
-    //»ç¿îµå
-    public AudioClip[] audioClips; //ÀÎ½ºÆåÅÍ ÇÒ´ç
-    public AudioSource[] SoundChannels; //ÀÎ½ºÆåÅÍ ÇÒ´ç
+    //ï¿½ï¿½ï¿½ï¿½
+    public AudioClip[] audioClips; //ï¿½Î½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½Ò´ï¿½
+    public AudioSource[] SoundChannels; //ï¿½Î½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½Ò´ï¿½
     int channelNum = 0;
 
-    //Á¡¼ö
+    //ï¿½ï¿½ï¿½ï¿½
     public int userScore = 0;
     Text ScoreText;
     Transform ScoreTextsPosition;
 
-    //º®
+    //ï¿½ï¿½
     GameObject Wall_left;
     GameObject Wall_right;
     GameObject Ground;
-    GameObject GameOverLine; //°ÔÀÓ ¿À¹ö ±â´É
+    GameObject GameOverLine; //ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½
     GameObject NextFruitParent;
+
+    public GameFlowManager GameFlowManager;
 
     float SizeUp = 0.2f;
 
@@ -59,19 +63,43 @@ public class FruitManager : MonoBehaviour
     int nextFruitLevel = 1;
     GameObject nextFruitModel;
 
-    Vector3 cursorPos; //¸¶¿ì½º Ä¿¼­ À§Ä¡, »ı¼ºµÈ °úÀÏ¸¸ÀÌ µû¶ó´Ù´Ô
+    Vector3 cursorPos; //ï¿½ï¿½ï¿½ì½º Ä¿ï¿½ï¿½ ï¿½ï¿½Ä¡, ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½Ï¸ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½Ù´ï¿½
 
     public float rightBorder;
     public float leftBorder;
     float gap = 0.25f;
-    bool isSimulated = false; //»õ °úÀÏÀÌ ¹°¸®·Â ¹Ş´ÂÁö¿¡ ´ëÇÑ bool
+    bool isSimulated = false; //ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½Ş´ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ bool
     float targetSize;
 
-    PlayFabManager playFabManager;
+    public GameObject rankingPageGameObject; // RankingPage GameObject to activate
 
+    // 1) ë­í‚¹ ë“±ë¡ ì™„ë£Œ í›„ í˜¸ì¶œ (ì™„ë£Œ ë²„íŠ¼ì— ì—°ê²°)
+    public void OnRankingUploadComplete()
+    {
+        StartCoroutine(WaitAndOpenGameOver(1.0f));
+    }
+
+    // 2) ë“±ë¡ ì¡°ê±´ ë¯¸ë‹¬ë¡œ ë°”ë¡œ ê²Œì„ ì˜¤ë²„ ì‹œ í˜¸ì¶œ
+    public void OnSimpleGameOver()
+    {
+        StartCoroutine(WaitAndOpenGameOver(1.0f));
+    }
+
+    private IEnumerator WaitAndOpenGameOver(float delay)
+    {
+        yield return new WaitForSeconds(delay);
+
+        if (gameOverCanvas != null)
+        {
+            gameOverCanvas.SetActive(true);
+        }
+    }
     public void makeGameOver()
     {
+        if (isGameOver) return;
+        isGameOver = true;
         isGameRun = false;
+        GameOver();
     }
     public bool isGameRun_func()
     {
@@ -82,7 +110,7 @@ public class FruitManager : MonoBehaviour
     {
         target = Vector3.zero;
         isReady = true;
-        fruits = new List<Fruit>(); //°úÀÏ ¸®½ºÆ® µ¿ÀûÇÒ´ç
+        fruits = new List<Fruit>(); //ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½Æ® ï¿½ï¿½ï¿½ï¿½ï¿½Ò´ï¿½
         ClickPoint = Vector2.zero;
 
         try
@@ -97,7 +125,6 @@ public class FruitManager : MonoBehaviour
             Ground = GameObject.Find("Ground");
             GameOverLine = GameObject.Find("GameOverLine");
             NextFruitParent = GameObject.Find("NextFruitParent");
-           
         }
         catch
         {
@@ -107,45 +134,43 @@ public class FruitManager : MonoBehaviour
 
     private void Start()
     {
-        //´ÙÀ½ ¹Ì¸®º¸±â
+        //ï¿½ï¿½ï¿½ï¿½ ï¿½Ì¸ï¿½ï¿½ï¿½ï¿½ï¿½
         nextFruitModel = Instantiate(FruitPrefab, NextFruitParent.transform, false);
-        nextFruitModel.GetComponent<Rigidbody2D>().simulated = false; //¹°¸®ÀÛ¿ë ²ô±â
+        nextFruitModel.GetComponent<Rigidbody2D>().simulated = false; //ï¿½ï¿½ï¿½ï¿½ï¿½Û¿ï¿½ ï¿½ï¿½ï¿½ï¿½
 
-        CreateFruit(); //È­¸é¿¡¼­ Ã¢Á¶¸¦ÇÔ.
-        StopRigidSim(); //¸®Áöµå ¹Ùµğ¸¦ Àá½Ã ¸ØÃá´Ù
+        CreateFruit(); //È­ï¿½é¿¡ï¿½ï¿½ Ã¢ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½.
+        StopRigidSim(); //ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½Ùµï¿½ ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½
         isGameRun = true;
-
-        playFabManager = GameObject.Find("PlayFabManager").GetComponent<PlayFabManager>();
     }
 
     void Update()
     {
         float step = speed * Time.deltaTime;
 
-        //¸¶¿ì½º°¡ ´­·ÈÀ» ½Ã true·Î ¸¸µç´Ù
+        //ï¿½ï¿½ï¿½ì½ºï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ trueï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½
         SetIsClicked();
 
         if (isGameRun)
         {
             if (newFruitGameObject)
             {
-                if (isClicked) //Å¬¸¯ÀÌ µÇ¸é ¶³¾î¶ß¸²
+                if (isClicked) //Å¬ï¿½ï¿½ï¿½ï¿½ ï¿½Ç¸ï¿½ ï¿½ï¿½ï¿½ï¿½ß¸ï¿½
                 {
                     isClicked = false;
 
-                    //¸ğµç °úÀÏÀÌ Ground »óÅÂ¶ó¸é
+                    //ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ Ground ï¿½ï¿½ï¿½Â¶ï¿½ï¿½
                     if (isReady)
                     {
                         isReady = false;
-                        SetInitialCoroutine(); //1ÃÊ ÈÄ °ÔÀÓ Á¶°Ç ÃÊ±âÈ­ : isGround, target
+                        SetInitialCoroutine(); //1ï¿½ï¿½ ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½Ê±ï¿½È­ : isGround, target
                     }
-                    PlayRigidSim(); //¶³¾î¶ß¸®±â
+                    PlayRigidSim(); //ï¿½ï¿½ï¿½ï¿½ß¸ï¿½ï¿½ï¿½
                 }
 
                 if (!isSimulated)
                 {
-                    //¶³¾îÁö´Â ¿ÍÁß¿¡´Â µû¶ó´Ù´ÏÁö ¾ÊÀ½
-                    //°úÀÏÀÌ Ä¿¼­¸¦ µû¶ó´Ù´Ô
+                    //ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ß¿ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½Ù´ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
+                    //ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ Ä¿ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½Ù´ï¿½
                     cursorPos = GameObject.Find("Cursor").GetComponent<CursorControl>().cursorPos;
                     if (newFruitGameObject)
                     {
@@ -155,18 +180,9 @@ public class FruitManager : MonoBehaviour
             }
             
         }
-        else //°ÔÀÓ ¿À¹ö ÆÇ´Ü - GameOverLine
-        {
-            if (!isGameOver)
-            {
-                GameOver();
-                isGameOver = true; 
-            }
-        }
-
     }
 
-    //ÆÄÆ¼Å¬ Àç»ı
+    //ï¿½ï¿½Æ¼Å¬ ï¿½ï¿½ï¿½
     public void PlayEffect(Transform trans, GameObject EffectGameObject)
     {
         GameObject newEffect;
@@ -174,7 +190,7 @@ public class FruitManager : MonoBehaviour
         {
             newEffect = Instantiate(EffectGameObject, EffectParent.transform, false);
             newEffect.transform.position = new Vector3(trans.position.x, trans.position.y, trans.position.z);
-            newEffect.GetComponent<ParticleSystem>().Play();//Àç»ı (¾Ë¾Æ¼­ »èÁ¦µÊ)
+            newEffect.GetComponent<ParticleSystem>().Play();//ï¿½ï¿½ï¿½ (ï¿½Ë¾Æ¼ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½)
         }
         catch
         {
@@ -182,7 +198,7 @@ public class FruitManager : MonoBehaviour
         }
     }
 
-    //¸¶¿ì½º°¡ ´­·ÈÀ» ½Ã true·Î ¸¸µç´Ù
+    //ï¿½ï¿½ï¿½ì½ºï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ trueï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½
     private void SetIsClicked()
     {
         if (Input.GetMouseButtonDown(0))
@@ -193,50 +209,50 @@ public class FruitManager : MonoBehaviour
 
     void ShowNextFruitModel()
     {
-        //»ı¼º
+        //ï¿½ï¿½ï¿½ï¿½
         nextFruitLevel = (int)UnityEngine.Random.Range(minLevel, fruitMaxLevel + 1);
 
-        //·¹º§¿¡ ¸Â´Â Å©±â Àû¿ë (¹Ì´Ï »çÀÌÁî)
+        //ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½Â´ï¿½ Å©ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ (ï¿½Ì´ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½)
         float size = SizeUp * (nextFruitLevel - 1);
 
         nextFruitModel.transform.localScale = new Vector3(0.5f + size, 0.5f + size, 0.5f + size);
 
-        //½ºÇÁ¶óÀÌÆ®µµ n-1¹øÂ° ½ºÇÁ¶óÀÌÆ®·Î ¹Ù²î¾î¾ßÇÔ
+        //ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Æ®ï¿½ï¿½ n-1ï¿½ï¿½Â° ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Æ®ï¿½ï¿½ ï¿½Ù²ï¿½ï¿½ï¿½ï¿½ï¿½
         nextFruitModel.GetComponent<SpriteRenderer>().sprite = fruitSprite[nextFruitLevel - 1];
     }
 
     /// <summary>
-    /// È­¸é¿¡¼­ Å¬¸¯(¾÷) xÁÂÇ¥¸¦ ¹Ş¾Æ¼­ (±× xÁÂÇ¥, createPoint yÁÂÇ¥) ¿¡¼­ Ã¢Á¶¸¦ÇÔ
+    /// È­ï¿½é¿¡ï¿½ï¿½ Å¬ï¿½ï¿½(ï¿½ï¿½) xï¿½ï¿½Ç¥ï¿½ï¿½ ï¿½Ş¾Æ¼ï¿½ (ï¿½ï¿½ xï¿½ï¿½Ç¥, createPoint yï¿½ï¿½Ç¥) ï¿½ï¿½ï¿½ï¿½ Ã¢ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
     /// </summary>
     void CreateFruit()
     {
         Fruit newFruit;
-        //»ı¼º
+        //ï¿½ï¿½ï¿½ï¿½
         int randomLevel = nextFruitLevel; /*(int)Random.Range(minLevel, fruitMaxLevel + 1);*/
         newFruitGameObject = Instantiate(FruitPrefab, FruitParent.transform, false) as GameObject;
         float randRotation = UnityEngine.Random.Range(-180f, 180f);
         newFruitGameObject.transform.localRotation = Quaternion.Euler(0, 0, randRotation);
 
-        //·¹º§¿¡ ¸Â´Â Å©±â Àû¿ë & ¾Ö´Ï¸ŞÀÌ¼Ç Ãß°¡
+        //ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½Â´ï¿½ Å©ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ & ï¿½Ö´Ï¸ï¿½ï¿½Ì¼ï¿½ ï¿½ß°ï¿½
         targetSize = SizeUp * (randomLevel - 1) + 1;
         StartCoroutine(SizeUpAnim(targetSize));
 
-        //º¸´õ¶óÀÎ ¼³Á¤
+        //ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
         rightBorder = -gap + Wall_right.transform.position.x - targetSize / 2;
         leftBorder = +gap + Wall_left.transform.position.x + targetSize / 2;
 
-        //½ºÇÁ¶óÀÌÆ®µµ n-1¹øÂ° ½ºÇÁ¶óÀÌÆ®·Î ¹Ù²î¾î¾ßÇÔ
+        //ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Æ®ï¿½ï¿½ n-1ï¿½ï¿½Â° ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Æ®ï¿½ï¿½ ï¿½Ù²ï¿½ï¿½ï¿½ï¿½ï¿½
         newFruitGameObject.GetComponent<SpriteRenderer>().sprite = fruitSprite[randomLevel - 1];
 
-        //°úÀÏ ¸®½ºÆ®¿¡ Ãß°¡ÇÑ´Ù
+        //ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½Æ®ï¿½ï¿½ ï¿½ß°ï¿½ï¿½Ñ´ï¿½
         newFruit = newFruitGameObject.GetComponent<Fruit>();
         newFruit.InitFruit(fruits, newFruitGameObject, randomLevel);
         fruits.Add(newFruit);
 
-        //»ç¿îµå Àç»ı
+        //ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½
         EffectSoundPlay(EffectSound.Merge);
 
-        //´ÙÀ½ °úÀÏ º¸¿©ÁÖ±â
+        //ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½Ö±ï¿½
         ShowNextFruitModel();
     }
 
@@ -252,68 +268,99 @@ public class FruitManager : MonoBehaviour
         yield return null;
     }
 
-    //½Ã°£ÀÌ 2f Áö³ª¸é °ÔÀÓ Á¶°ÇÀ» ÃÊ±âÈ­ ÇÑ´Ù
+    //ï¿½Ã°ï¿½ï¿½ï¿½ 2f ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½Ê±ï¿½È­ ï¿½Ñ´ï¿½
     void SetInitialCoroutine()
     {
         StartCoroutine(InitTime1f());
     }
 
     /// <summary>
-    /// 2ÃÊ ½Ã°£
+    /// 2ï¿½ï¿½ ï¿½Ã°ï¿½
     /// </summary>
     /// <returns></returns>
     IEnumerator InitTime1f()
     {
         yield return new WaitForSeconds(1f);
 
-        //ÃÊ±âÈ­
+        //ï¿½Ê±ï¿½È­
         isReady = true;
         target = Vector3.zero;
 
-        //´Ù½Ã »ı¼º
+        //ï¿½Ù½ï¿½ ï¿½ï¿½ï¿½ï¿½
         CreateFruit();
-        StopRigidSim();//¸®Áöµå ¹Ùµğ¸¦ Àá½Ã ¸ØÃá´Ù
+        StopRigidSim();//ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½Ùµï¿½ ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½
         groundControl.isPlayed = false;
     }
 
+    public RankingNameInputUI rankingNameInputUI; // Name input UI script
+
     void GameOver()
     {
+        Debug.Log("GameOver called with score: " + userScore);
         isReady = false;
+        isGameRun = false;
         target = Vector3.zero;
-        StopRigidSim();//¸®Áöµå ¹Ùµğ¸¦ Àá½Ã ¸ØÃá´Ù
-        groundControl.isPlayed = false;
-        Time.timeScale = 0;
-
-        //°ÔÀÓ °á°ú & ¸®ÇÃ·¹ÀÌ ¹öÆ° ¶ç¿ì±â
-        //...
-
-        //À¯ÀúÀÇ ¿ª´ë ÃÖ´ë Á¡¼ö¸¦ ³Ñ°å´Ù¸é ÇÃ·¹ÀÌÆÕ¿¡ ÀúÀåÇÏ±â
-        //ÃÖ´ë Á¡¼ö ºñ±³
-        //ÇÃ·¹ÀÌÆÕ¿¡ Á¡¼ö ÀúÀå
-        if (playFabManager.isLogOn == true)
-        {     
-            playFabManager.SetStat(userScore); //Á¡¼ö ÀúÀå
-            if(userScore> playFabManager.playerBestScore)
-                playFabManager.SetBestScore(userScore);
-        }
-        else {
-            playFabManager.LoginToPlayFab(null);
-            //Á¡¼ö ÀúÀå
-            playFabManager.LoginToPlayFab(() =>
+        
+        // Disable all fruits' physics instead of Time.timeScale = 0
+        // This ensures UI animations still work correctly
+        GameObject fruitParent = GameObject.Find("FruitParent");
+        if (fruitParent != null)
+        {
+            Rigidbody2D[] rbs = fruitParent.GetComponentsInChildren<Rigidbody2D>();
+            foreach (Rigidbody2D rb in rbs)
             {
-                // ·Î±×ÀÎ ¼º°ø ÈÄ, Á¡¼ö ÀúÀå 
-                playFabManager.SetStat(userScore); //Á¡¼ö ÀúÀå
-                if (userScore > playFabManager.playerBestScore)
-                    playFabManager.SetBestScore(userScore);
-            });
+                rb.simulated = false;
+            }
         }
 
+        if (groundControl != null)
+        {
+            groundControl.isPlayed = false;
+        }
+
+        // Check if current score is within top 3
+        bool isInTop3 = RankingManager.IsInTop3(userScore);
+        Debug.Log("Is in top 3: " + isInTop3);
+
+        if (isInTop3)
+        {
+            // Show Name Input UI
+            if (rankingNameInputUI != null)
+            {
+                rankingNameInputUI.Show(userScore);
+                Debug.Log("Showing name input UI");
+            }
+            else
+            {
+                Debug.LogError("RankingNameInputUI not assigned in FruitManager! Showing ranking page as fallback.");
+                if (rankingPageGameObject != null) rankingPageGameObject.SetActive(true);
+            }
+        }
+        else
+        {
+            // Just show ranking page if not in top 3
+            if (rankingPageGameObject != null)
+            {
+                rankingPageGameObject.SetActive(true);
+                Debug.Log("Showing ranking page");
+            }
+            GameFlowManager.OnSimpleGameOver();
+        }
+
+        // If no UI was shown at all, we might need a fallback or just don't pause the game
+        if (rankingNameInputUI == null && rankingPageGameObject == null)
+        {
+            Debug.LogError("No Game Over UI assigned! The game will just stop.");
+        }
     }
 
     void StopRigidSim()
     {
         isSimulated = false;
-        newFruitGameObject.GetComponent<Rigidbody2D>().simulated = false;
+        if (newFruitGameObject != null)
+        {
+            newFruitGameObject.GetComponent<Rigidbody2D>().simulated = false;
+        }
     }
 
     void PlayRigidSim()
@@ -331,7 +378,7 @@ public class FruitManager : MonoBehaviour
                 SoundChannels[channelNum].clip = audioClips[0];
                 SoundChannels[channelNum].Play();
                 break;
-            case EffectSound.Merge: //1°ú 2Áß¿¡ ·£´ıÇÏ°Ô Àç»ı
+            case EffectSound.Merge: //1ï¿½ï¿½ 2ï¿½ß¿ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½Ï°ï¿½ ï¿½ï¿½ï¿½
                 SoundChannels[channelNum].clip = audioClips[(int)UnityEngine.Random.Range(1f, 2.1f)];
                 SoundChannels[channelNum].Play();
                 break;
@@ -341,7 +388,7 @@ public class FruitManager : MonoBehaviour
 
     }
 
-    //Á¡¼ö °è»ê±â
+    //ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
     public void UpdateScore(int addedScore)
     {
         userScore += addedScore;

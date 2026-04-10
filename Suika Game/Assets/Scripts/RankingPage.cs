@@ -2,84 +2,91 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
+using System.Linq;
 
 public class RankingPage : MonoBehaviour
 {
-    List<Tuple<string, int>> RankingData;
-    public GameObject RankingContent; //ÀÎ½ºÆåÅÍ ÇÒ´ç
-    public static int rankingCnt = 10; //º¸¿©ÁÙ »óÀ§ ·©Ä¿ÀÇ ¼ö
+    List<RankingEntry> rankingDataList;
+    public GameObject RankingContent; //ï¿½Î½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½Ò´ï¿½
+    public static int rankingCnt = 3; //ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½Ä¿ï¿½ï¿½ ï¿½ï¿½
     public GameObject RankingContentPrefab;
     List<GameObject> RankingContentChild;
-    public ScrollRect scrollRect; //½ºÅ©·Ñºä À§Ä¡ °íÁ¤
+    public ScrollRect scrollRect; //ï¿½ï¿½Å©ï¿½Ñºï¿½ ï¿½ï¿½Ä¡ ï¿½ï¿½ï¿½ï¿½
     private float[] pagePositions;
-
-    public PlayFabManager playFabManager; //ÀÎ½ºÆåÅÍ ÇÒ´ç
 
     private void Awake()
     {
-        RankingData = new List<Tuple<string, int>>();
+        rankingDataList = new List<RankingEntry>();
         if (RankingContent == null || RankingContentPrefab == null)
         {
-            Debug.LogError("RankingContent¸¦ ÇÒ´çÇÏ¼¼¿ä");
+            Debug.LogError("RankingContentï¿½ï¿½ ï¿½Ò´ï¿½ï¿½Ï¼ï¿½ï¿½ï¿½");
         }
         RankingContentChild = new List<GameObject>();
     }
-    //È°¼ºÈ­ ½Ã¿¡ ½ÇÇà
+    //È°ï¿½ï¿½È­ ï¿½Ã¿ï¿½ ï¿½ï¿½ï¿½ï¿½
     private void OnEnable()
     {
-        playFabManager.GetLeaderboard(MyLeaderboardCallback);
+        UpdateRankingUI();
+    }
+
+    public void UpdateRankingUI()
+    {
+        rankingDataList = RankingManager.GetRanking();
+        Debug.Log("Ranking UI Updated. Count: " + rankingDataList.Count);
+        ShowWorldRanking();
     }
 
     public void ShowWorldRanking()
     {
-        //ÇÁ¸®ÆÕÀ¸·Î ÀÚ½Ä ÄÜÅÙÃ÷¸¦ Ç¥½ÃÇÏ±â + »ý¼º
-        if (RankingContentChild.Count == 0)
-        {
-            for (int i = 0; i < rankingCnt; i++)
-            {
-                GameObject newContent = Instantiate(RankingContentPrefab, RankingContent.transform);
-                Text playerName = newContent.GetComponentsInChildren<Text>()[0];
-                Text playerScore = newContent.GetComponentsInChildren<Text>()[1];
-                Text count = newContent.GetComponentsInChildren<Text>()[2];
-                try
-                {
-                    playerName.text = RankingData[i].Item1;
-                    playerScore.text = RankingData[i].Item2.ToString();
-                }
-                catch
-                {
-                    Debug.Log("RankingData¿¡ µ¥ÀÌÅÍ°¡ ¾øÀ½");
-                }
-                count.text = string.Format("{0:00}", i + 1);
-                RankingContentChild.Add(newContent);
-            }
-        }
-        else
-        {
-            for (int i = 0; i < rankingCnt; i++)
-            {
-                GameObject curContent = RankingContentChild[i];
-                Text playerName = curContent.GetComponentsInChildren<Text>()[0];
-                Text playerScore = curContent.GetComponentsInChildren<Text>()[1];
-                Text count = curContent.GetComponentsInChildren<Text>()[2];
+        // 1. ë°ì´í„° ì •ë ¬ (ë‚´ë¦¼ì°¨ìˆœ)
+        rankingDataList = rankingDataList.OrderByDescending(x => x.score).ToList();
 
-                try
-                {
-                    playerName.text = RankingData[i].Item1;
-                    playerScore.text = RankingData[i].Item2.ToString();                
-                }
-                catch
-                {
-                    Debug.Log("RankingData¿¡ µ¥ÀÌÅÍ°¡ ¾øÀ½");
-                }
-                count.text = string.Format("{0:00}", i + 1);
-            }
-        }
-    }
+        Debug.Log("Showing Ranking. Count to display: " + rankingCnt);
 
-    public void SetRankingData(List<Tuple<string, int>> data)
-    {
-        RankingData = data;
+        for (int i = 0; i < rankingCnt; i++)
+        {
+            GameObject curContent;
+
+            // 2. í”„ë¦¬íŒ¹ ìƒì„± ë˜ëŠ” ê¸°ì¡´ ê°ì²´ ìž¬ì‚¬ìš©
+            if (RankingContentChild.Count <= i)
+            {
+                curContent = Instantiate(RankingContentPrefab, RankingContent.transform);
+                RankingContentChild.Add(curContent);
+            }
+            else
+            {
+                curContent = RankingContentChild[i];
+            }
+
+            // 3. í…ìŠ¤íŠ¸ ì»´í¬ë„ŒíŠ¸ ê°€ì ¸ì˜¤ê¸° ë° ì˜ˆì™¸ ì²˜ë¦¬
+            Text[] texts = curContent.GetComponentsInChildren<Text>();
+            if (texts.Length < 3)
+            {
+                Debug.LogError($"{i}ë²ˆì§¸ í”„ë¦¬íŒ¹ì— Text ì»´í¬ë„ŒíŠ¸ê°€ ë¶€ì¡±í•©ë‹ˆë‹¤!");
+                continue;
+            }
+
+            // ì¸ë±ìŠ¤ ìˆœì„œ ì£¼ì˜: í”„ë¦¬íŒ¹ êµ¬ì¡°ì— ë§žê²Œ ê³ ì •í•˜ì„¸ìš”. 
+            // ì˜ˆ: [0]=ìˆœìœ„, [1]=ì´ë¦„, [2]=ì ìˆ˜
+            Text countText = texts[0];
+            Text nameText = texts[1];
+            Text scoreText = texts[2];
+
+            // 4. ë°ì´í„° ë°˜ì˜ (ë°ì´í„°ê°€ ìžˆìœ¼ë©´ ê°’ ìž…ë ¥, ì—†ìœ¼ë©´ í•˜ì´í”ˆ ì²˜ë¦¬)
+            if (i < rankingDataList.Count)
+            {
+                nameText.text = rankingDataList[i].name;
+                scoreText.text = rankingDataList[i].score.ToString();
+            }
+            else
+            {
+                nameText.text = "-";
+                scoreText.text = "0";
+            }
+
+            // 5. ìˆœìœ„ í‘œì‹œ (01, 02, 03...)
+            countText.text = string.Format("{0:00}", i + 1);
+        }
     }
 
     private void Update()
@@ -87,30 +94,14 @@ public class RankingPage : MonoBehaviour
         if (Input.GetMouseButtonDown(0))
         {
             Vector2 mousePosition = Input.mousePosition/*Camera.main.ScreenToWorldPoint(Input.mousePosition)*/;
-
-            // Canvas°¡ È°¼ºÈ­µÇ¾î ÀÖ°í Å¬¸¯µÈ À§Ä¡°¡ Canvas ³»ºÎ°¡ ¾Æ´Ñ °æ¿ì Canvas¸¦ ºñÈ°¼ºÈ­
-            if (this.gameObject.activeSelf
-                && !RectTransformUtility.RectangleContainsScreenPoint(this.gameObject.GetComponent<RectTransform>(), mousePosition))
-            {
-                //¾Ö´Ï¸ÞÀÌ¼Ç Àç»ý
-                gameObject.GetComponent<Animation>().Play("RankingPageCloseAnim");
-            }
             
         }
     }
 
-    // ¾Ö´Ï¸ÞÀÌ¼Ç ÀÌº¥Æ®¿¡¼­ È£ÃâµÉ ÇÔ¼ö
     public void OnAnimationEnd()
     {
-        // ¾Ö´Ï¸ÞÀÌ¼ÇÀÌ ³¡³ª¸é Canvas¸¦ ºñÈ°¼ºÈ­ÇÕ´Ï´Ù.
         gameObject.SetActive(false);
     }
 
-    //¸®´õº¸µå¿¡¼­ °ªÀ» °»½ÅÇÏ¸é È­¸é¿¡ Ç¥½Ã (ÄÝ¹é)
-    public void MyLeaderboardCallback(PlayFab.ClientModels.GetLeaderboardResult result)
-    {
-        Debug.Log("Leaderboard received successfully!");
-        ShowWorldRanking();
-    }
 
 }

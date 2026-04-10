@@ -21,12 +21,55 @@ public class GameOverLine : MonoBehaviour
         }
     }
 
-    private void OnTriggerEnter2D(Collider2D collision)
+    private float timer = 0f;
+    private const float GAME_OVER_TIME = 2.0f; // 2 seconds grace period
+    private List<GameObject> touchingFruits = new List<GameObject>();
+
+    private void Update()
     {
-        if (collision.gameObject.tag == "Fruit" && fruitManager.isGameRun_func() && fruitManager.isReady)
+        // Clean up null (destroyed) objects
+        touchingFruits.RemoveAll(item => item == null);
+
+        if (touchingFruits.Count > 0 && fruitManager.isGameRun_func())
         {
-            fruitManager.makeGameOver();
-            Debug.Log("Game Over");
+            timer += Time.deltaTime;
+            if (timer > 0 && timer < Time.deltaTime * 2) Debug.Log("GameOver Timer Started...");
+
+            if (timer >= GAME_OVER_TIME)
+            {
+                fruitManager.makeGameOver();
+                Debug.Log("Game Over triggered by timer");
+                timer = 0f;
+                touchingFruits.Clear();
+            }
+        }
+        else
+        {
+            timer = 0f;
+        }
+    }
+
+    private void OnTriggerStay2D(Collider2D collision)
+    {
+        if (collision.gameObject.tag == "Fruit")
+        {
+            // Only count as touching if the fruit is NOT the one currently being held/dropped
+            if (fruitManager.newFruitGameObject == null || collision.gameObject != fruitManager.newFruitGameObject)
+            {
+                if (!touchingFruits.Contains(collision.gameObject))
+                {
+                    touchingFruits.Add(collision.gameObject);
+                    Debug.Log("Fruit touched GameOverLine: " + collision.gameObject.name);
+                }
+            }
+        }
+    }
+
+    private void OnTriggerExit2D(Collider2D collision)
+    {
+        if (touchingFruits.Contains(collision.gameObject))
+        {
+            touchingFruits.Remove(collision.gameObject);
         }
     }
 }

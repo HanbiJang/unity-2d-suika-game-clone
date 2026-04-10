@@ -16,9 +16,6 @@ public class BtnStart : MonoBehaviour
     
     public LoadingSceneController loadingSceneController; 
     public void StartFunc() {
-        PlayFabManager playFabManager = GameObject.Find("PlayFabManager").GetComponent<PlayFabManager>();
-        playFabManager.curSceneNum = 1;
-
         loadingSceneController = GameObject.Find("LoadingSceneController").GetComponent<LoadingSceneController>();
         loadingSceneController.MyLoadingScene();
     }
