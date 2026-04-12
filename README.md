@@ -1,12 +1,14 @@
 <img width="833" height="465" alt="Image" src="https://github.com/user-attachments/assets/9d674e58-4fcc-4c30-b86b-5d653d9c18ce" />
 
-## 🛠️ 기술 스택
+## 🎮 프로젝트 개요
 
-- **Engine**: Unity (2D)
-- **Language**: C#
-- **Physics**: Unity Rigidbody2D / Collider2D
-- **Data Storage**: Unity PlayerPrefs + JsonUtility
-- **Scene Management**: Unity SceneManager (비동기 로딩)
+| 항목 | 내용 |
+|------|------|
+| 장르 | 물리 퍼즐 2D 게임 |
+| 엔진 | Unity (C#) |
+| 개발 기간 | 2024.04 ~ 2024.05, 2026.04 |
+| 개발 인원 | 1인 |
+| 핵심 목표 | 물리 기반 과일 합체 시스템 |
 
 ---
 
