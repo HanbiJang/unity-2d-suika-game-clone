@@ -1,3 +1,5 @@
+<img width="833" height="465" alt="Image" src="https://github.com/user-attachments/assets/9d674e58-4fcc-4c30-b86b-5d653d9c18ce" />
+
 ## 🛠️ 기술 스택
 
 - **Engine**: Unity (2D)
