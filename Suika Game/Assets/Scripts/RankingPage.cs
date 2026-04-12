@@ -98,6 +98,11 @@ public class RankingPage : MonoBehaviour
         }
     }
 
+    public void CloseRankingPage()
+    {
+        GetComponent<Animation>().Play("RankingPageCloseAnim");
+    }
+
     public void OnAnimationEnd()
     {
         gameObject.SetActive(false);
