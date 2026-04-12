@@ -8,29 +8,6 @@
 
 ---
 
-## 📁 프로젝트 구조
-```
-Assets/
-├── Scripts/
-│   ├── Fruit.cs               # 과일 개체 로직 (충돌, 합체)
-│   ├── FruitManager.cs        # 게임 전반 매니저 (생성, 점수, 사운드)
-│   ├── GameOverLine.cs        # 게임 오버 판정 라인
-│   ├── GameFlowManager.cs     # 게임 흐름 제어 (게임 오버 UI 전환)
-│   ├── GroundControl.cs       # 바닥 충돌 감지 및 사운드
-│   ├── CursorControl.cs       # 마우스 커서 → 월드 좌표 변환
-│   ├── LoadingSceneController.cs  # 비동기 씬 로딩 + 커튼 트랜지션
-│   ├── RankingManager.cs      # 로컬 랭킹 데이터 관리 (PlayerPrefs)
-│   ├── RankingNameInputUI.cs  # 랭킹 등록 이름 입력 UI
-│   ├── RankingPage.cs         # 랭킹 결과 화면
-│   ├── RetryHandler.cs        # 재시작 / 씬 전환 처리
-│   ├── BtnStart.cs            # 시작 버튼
-│   └── BtnRank.cs             # 랭킹 버튼
-├── Scenes/
-└── Resources/
-```
-
----
-
 ## ⚙️ 핵심 기술 및 구현 내용
 
 ### 1. 물리 기반 과일 합체 시스템 (`Fruit.cs`)
