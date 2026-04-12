@@ -68,9 +68,9 @@ public class RankingPage : MonoBehaviour
 
             // 인덱스 순서 주의: 프리팹 구조에 맞게 고정하세요. 
             // 예: [0]=순위, [1]=이름, [2]=점수
-            Text countText = texts[0];
-            Text nameText = texts[1];
-            Text scoreText = texts[2];
+            Text nameText = texts[0];  // RankingPlayerNameText
+            Text scoreText = texts[1];  // RankingPlayerScore
+            Text countText = texts[2];  // count
 
             // 4. 데이터 반영 (데이터가 있으면 값 입력, 없으면 하이픈 처리)
             if (i < rankingDataList.Count)

@@ -2777,8 +2777,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   RankingContent: {fileID: 1194117800}
   RankingContentPrefab: {fileID: 1810943798999889773, guid: 5df20468fe719fd4cb5e69889b316018, type: 3}
-  scrollRect: {fileID: 0}
-  playFabManager: {fileID: 2034504529}
+  scrollRect: {fileID: 818043359}
 --- !u!1 &1127799185
 GameObject:
   m_ObjectHideFlags: 0
@@ -4590,12 +4589,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8d4eb786264d7d0419f9162478b60fe7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  isLogOn: 0
-  curSceneNum: 0
-  playerBestScore: 0
-  BestScoreText: {fileID: 0}
-  UserDisplayNameText: {fileID: 1210550375}
-  rankingPage: {fileID: 1120291655}
 --- !u!1 &2051815752
 GameObject:
   m_ObjectHideFlags: 0
