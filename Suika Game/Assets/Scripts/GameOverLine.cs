@@ -36,6 +36,13 @@ public class GameOverLine : MonoBehaviour
         // Clean up null (destroyed) objects
         touchingFruits.RemoveAll(item => item == null);
 
+        if (fruitManager == null)
+        {
+            // 멀티씬에서 FruitManager 이름이 다를 경우 재탐색
+            fruitManager = GameObject.Find("FruitManager")?.GetComponent<FruitManager>();
+            if (fruitManager == null) return;
+        }
+
         if (touchingFruits.Count > 0 && fruitManager.isGameRun_func())
         {
             timer += Time.deltaTime;

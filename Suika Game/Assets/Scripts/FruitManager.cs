@@ -57,6 +57,12 @@ public class FruitManager : MonoBehaviour
     public GameFlowManager GameFlowManager;
 
     /// <summary>
+    /// true면 게임오버 시 싱글용 랭킹/결과 UI를 표시하지 않음.
+    /// MultiGameManager가 Start()에서 true로 설정.
+    /// </summary>
+    [HideInInspector] public bool suppressGameOverUI = false;
+
+    /// <summary>
     /// 멀티 씬처럼 이름 중복이 있는 경우 여기에 직접 연결.
     /// 비워두면 GameObject.Find() 자동 탐색 (싱글 씬 호환).
     /// </summary>
@@ -82,10 +88,14 @@ public class FruitManager : MonoBehaviour
     GameObject nextFruitModel;
 
     // 멀티플레이어 동기화 이벤트
-    public System.Action<int> OnNextFruitLevelChanged;              // 다음 과일 레벨 변경 시
-    public System.Action<int, float, float, float> OnFruitDropped;  // 드롭 시 (level, localX, localY, rotation)
-    public System.Action<int> OnScoreUpdated;                       // 점수 변경 시
-    public System.Action OnGameOverTriggered;                        // 게임오버 시
+    public System.Action<int> OnNextFruitLevelChanged;                              // 다음 과일 레벨 변경 시
+    public System.Action<int, float, float, float, int> OnFruitCreated;             // 과일 생성(들기) 시 (level, localX, localY, rotation, dropId)
+    public System.Action<int, float, float, float> OnFruitDropped;                  // 드롭(놓기) 시 (dropId, localX, localY, rotation)
+    public System.Action<int, int, int> OnFruitMerged;                              // 머지 시 (survivorDropId, otherDropId, newLevel)
+    public System.Action<int> OnScoreUpdated;                                       // 점수 변경 시
+    public System.Action OnGameOverTriggered;                                        // 게임오버 시
+
+    private int _nextDropId = 0;
 
     Vector3 cursorPos; //���콺 Ŀ�� ��ġ, ������ ���ϸ��� ����ٴ�
 
@@ -278,7 +288,14 @@ public class FruitManager : MonoBehaviour
         //���� ����Ʈ�� �߰��Ѵ�
         newFruit = newFruitGameObject.GetComponent<Fruit>();
         newFruit.InitFruit(fruits, newFruitGameObject, randomLevel);
+        newFruit.dropId = _nextDropId++;
         fruits.Add(newFruit);
+
+        // 과일 생성(들기) 이벤트 (멀티플레이어 동기화용)
+        float createX   = newFruitGameObject.transform.localPosition.x;
+        float createY   = newFruitGameObject.transform.localPosition.y;
+        float createRot = newFruitGameObject.transform.localRotation.eulerAngles.z;
+        OnFruitCreated?.Invoke(randomLevel, createX, createY, createRot, newFruit.dropId);
 
         //���� ���
         EffectSoundPlay(EffectSound.Merge);
@@ -331,23 +348,21 @@ public class FruitManager : MonoBehaviour
         isReady = false;
         isGameRun = false;
         target = Vector3.zero;
-        
-        // Disable all fruits' physics instead of Time.timeScale = 0
-        // This ensures UI animations still work correctly
-        GameObject fruitParent = GameObject.Find("FruitParent");
-        if (fruitParent != null)
+
+        // 모든 과일 물리 정지
+        if (FruitParent != null)
         {
-            Rigidbody2D[] rbs = fruitParent.GetComponentsInChildren<Rigidbody2D>();
+            Rigidbody2D[] rbs = FruitParent.GetComponentsInChildren<Rigidbody2D>();
             foreach (Rigidbody2D rb in rbs)
-            {
                 rb.simulated = false;
-            }
         }
 
         if (groundControl != null)
-        {
             groundControl.isPlayed = false;
-        }
+
+        // 멀티 모드에서는 싱글용 랭킹 UI를 표시하지 않음
+        // MultiGameManager가 별도로 결과 화면을 처리
+        if (suppressGameOverUI) return;
 
         // Check if current score is within top 3
         bool isInTop3 = RankingManager.IsInTop3(userScore);
@@ -401,11 +416,62 @@ public class FruitManager : MonoBehaviour
 
         // 드롭 이벤트 발생 (멀티플레이어 동기화용)
         // localPosition 사용: 상대방 박스(FruitParent_Other)에서도 같은 로컬 좌표로 재현 가능
-        int droppedLevel = newFruitGameObject.GetComponent<Fruit>().level;
-        float localX = newFruitGameObject.transform.localPosition.x;
-        float localY = newFruitGameObject.transform.localPosition.y;
+        // 드롭(놓기) 이벤트: dropId + 최종 위치/회전만 전달 (과일은 EVT_FRUIT_CREATE에서 이미 생성됨)
+        Fruit droppedFruit = newFruitGameObject.GetComponent<Fruit>();
+        int droppedId = droppedFruit.dropId;
+        float localX   = newFruitGameObject.transform.localPosition.x;
+        float localY   = newFruitGameObject.transform.localPosition.y;
         float rotation = newFruitGameObject.transform.localRotation.eulerAngles.z;
-        OnFruitDropped?.Invoke(droppedLevel, localX, localY, rotation);
+        OnFruitDropped?.Invoke(droppedId, localX, localY, rotation);
+    }
+
+    /// <summary>
+    /// Fruit.cs의 MergeOther에서 호출. 머지 이벤트를 멀티플레이어에 전파.
+    /// </summary>
+    public void NotifyMerge(int survivorDropId, int otherDropId, int newLevel)
+    {
+        OnFruitMerged?.Invoke(survivorDropId, otherDropId, newLevel);
+    }
+
+    /// <summary>
+    /// 현재 존재하는 모든 과일의 위치/속도 스냅샷.
+    /// MultiGameManager가 주기적으로 호출해 상대방에게 전송.
+    /// </summary>
+    public struct FruitSnapshot
+    {
+        public int   dropId;
+        public float x, y, rot;
+        public float vx, vy, angVel;
+        public bool  simulated;
+    }
+
+    public FruitSnapshot[] GetFruitStates()
+    {
+        var result = new List<FruitSnapshot>();
+        foreach (var fruit in fruits)
+        {
+            if (fruit == null) continue;
+            var go = fruit.FruitGameObject;
+            if (go == null) continue;
+            // 머지 애니메이션 중인 과일(겹친 위치)은 스냅샷에서 제외
+            // → 수신측에 "겹친 위치"가 전달되면 물리 충돌로 튕겨나가는 현상 방지
+            if (fruit.IsMerging) continue;
+            var rb = go.GetComponent<Rigidbody2D>();
+            if (rb == null) continue;
+
+            Vector2 lp  = go.transform.localPosition;
+            float   rot = go.transform.localRotation.eulerAngles.z;
+
+            result.Add(new FruitSnapshot
+            {
+                dropId    = fruit.dropId,
+                x         = lp.x, y = lp.y, rot = rot,
+                vx        = rb.velocity.x, vy = rb.velocity.y,
+                angVel    = rb.angularVelocity,
+                simulated = rb.simulated
+            });
+        }
+        return result.ToArray();
     }
 
     public void EffectSoundPlay(EffectSound effectSound)
