@@ -72,3 +72,5 @@ crashlytics-build.properties
 /[Aa]ssets/[Ss]treamingAssets/aa/*
 Suika Game/Assets/PlayFabEditorExtensions/
 Suika Game/Assets/PlayFabSDK/
+Suika Game/Assets/Photon/
+Suika Game/Assets/Photon.meta
