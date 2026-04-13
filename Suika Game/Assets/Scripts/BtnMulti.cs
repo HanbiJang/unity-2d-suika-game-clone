@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
 public class BtnMulti : MonoBehaviour
@@ -11,7 +12,13 @@ public class BtnMulti : MonoBehaviour
 
     public void MultiFunc()
     {
-        LoadingSceneController loadingSceneController = GameObject.Find("LoadingSceneController").GetComponent<LoadingSceneController>();
-        loadingSceneController.MyLoadingSceneTo("MultiModeScene");
+        // PhotonNetworkManager가 없으면 씬 이동 전 생성
+        if (PhotonNetworkManager.Instance == null)
+        {
+            GameObject obj = new GameObject("PhotonNetworkManager");
+            obj.AddComponent<PhotonNetworkManager>();
+        }
+
+        SceneManager.LoadScene("LobbyScene");
     }
 }

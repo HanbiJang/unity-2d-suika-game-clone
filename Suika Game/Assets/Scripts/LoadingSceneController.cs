@@ -10,7 +10,7 @@ public class LoadingSceneController : MonoBehaviour
 
     private void Awake()
     {
-        DontDestroyOnLoad(this.gameObject); //�� ���� ������Ʈ�� �� ��ȯ�ÿ��� �������� �ʵ��� ����
+        DontDestroyOnLoad(this.gameObject);
     }
 
     public void MyLoadingScene()
