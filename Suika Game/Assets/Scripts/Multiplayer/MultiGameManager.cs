@@ -30,11 +30,15 @@ public class MultiGameManager : MonoBehaviourPunCallbacks, IOnEventCallback
     // ─── Inspector 연결 필드 ──────────────────────────────────────
     [Header("Local Player")]
     [SerializeField] private FruitManager localFruitManager;
+    /// <summary>로컬 플레이어의 최상위 컨테이너 (GameObjects). 게임오버 시 회색 처리에 사용.</summary>
+    [SerializeField] private Transform localGameObjects;
 
     [Header("Other Player Display")]
     [SerializeField] private Transform nextFruitParent_Other;
     [SerializeField] private Transform fruitParent_Other;
     [SerializeField] private Text otherScoreText;
+    /// <summary>상대방 표시 최상위 컨테이너 (GameObjects_Other). 상대 게임오버 시 회색 처리에 사용.</summary>
+    [SerializeField] private Transform otherGameObjects;
 
     [Header("Multi Result UI")]
     [SerializeField] private GameObject multiResultCanvas;
@@ -44,6 +48,11 @@ public class MultiGameManager : MonoBehaviourPunCallbacks, IOnEventCallback
     private GameObject otherNextFruitModel;
     private bool gameEnded = false;
     private Dictionary<int, Fruit> otherFruits = new Dictionary<int, Fruit>();
+
+    // 두 플레이어 모두 GameOverLine에 닿아야 게임 종료
+    private bool localGamedOver  = false;
+    private bool otherGamedOver  = false;
+    private int  otherFinalScore = 0;
 
     // ─────────────────────────────────────────────────────────────
     // Unity 생명주기
@@ -124,10 +133,10 @@ public class MultiGameManager : MonoBehaviourPunCallbacks, IOnEventCallback
             new RaiseEventOptions { Receivers = ReceiverGroup.Others }, SendOptions.SendReliable);
     }
 
-    private void SendGameOver()
+    private void SendGameOver(int score)
     {
         if (!PhotonNetwork.IsConnected) return;
-        PhotonNetwork.RaiseEvent(EVT_GAME_OVER, null,
+        PhotonNetwork.RaiseEvent(EVT_GAME_OVER, new object[] { score },
             new RaiseEventOptions { Receivers = ReceiverGroup.Others }, SendOptions.SendReliable);
     }
 
@@ -177,9 +186,24 @@ public class MultiGameManager : MonoBehaviourPunCallbacks, IOnEventCallback
 
     private void OnLocalGameOver()
     {
-        Debug.Log("[MultiGameManager] OnLocalGameOver called");
-        SendGameOver();
-        ShowResult(false);
+        if (localGamedOver) return;
+        localGamedOver = true;
+        int myScore = localFruitManager.userScore;
+        Debug.Log($"[MultiGameManager] OnLocalGameOver called, score={myScore}");
+
+        // 상대방에게 내 최종 점수 전송
+        SendGameOver(myScore);
+
+        // 로컬 GameObjects 전체 스프라이트를 회색으로
+        GrayOutLocalGameObjects();
+
+        // 상대방이 이미 게임오버 상태라면 지금 바로 결과 표시
+        if (otherGamedOver)
+        {
+            ShowResultByScore(myScore, otherFinalScore);
+        }
+        // else: 상대방이 아직 플레이 중 → 내 플레이만 정지(FruitManager가 이미 처리),
+        //       상대방이 GameOverLine에 닿을 때까지 대기
     }
 
     // ─────────────────────────────────────────────────────────────
@@ -264,14 +288,53 @@ public class MultiGameManager : MonoBehaviourPunCallbacks, IOnEventCallback
             }
 
             case EVT_GAME_OVER:
-                ShowResult(true);
+            {
+                otherFinalScore = (int)((object[])photonEvent.CustomData)[0];
+                otherGamedOver  = true;
+                Debug.Log($"[MultiGameManager] Received EVT_GAME_OVER from other, score={otherFinalScore}");
+
+                // 상대방 화면을 회색으로
+                GrayOutOtherGameObjects();
+
+                if (localGamedOver)
+                {
+                    // 나도 이미 게임오버 → 지금 바로 결과 표시
+                    ShowResultByScore(localFruitManager.userScore, otherFinalScore);
+                }
+                // else: 상대방이 먼저 게임오버 → 내 플레이는 계속, 나중에 내가 게임오버되면 결과 표시
                 break;
+            }
         }
     }
 
     // ─────────────────────────────────────────────────────────────
     // 결과 UI
     // ─────────────────────────────────────────────────────────────
+
+    static readonly Color GrayColor = new Color(0x9A / 255f, 0x9A / 255f, 0x9A / 255f, 1f);
+
+    /// <summary>지정 Transform 하위의 모든 SpriteRenderer를 회색(#9A9A9A)으로 변경. 알파=0인 개체는 스킵.</summary>
+    private static void GrayOutSprites(Transform root)
+    {
+        if (root == null) return;
+        foreach (SpriteRenderer sr in root.GetComponentsInChildren<SpriteRenderer>(true))
+        {
+            if (sr.color.a == 0f) continue;
+            sr.color = GrayColor;
+        }
+    }
+
+    private void GrayOutLocalGameObjects() => GrayOutSprites(localGameObjects);
+    private void GrayOutOtherGameObjects() => GrayOutSprites(otherGameObjects);
+
+    /// <summary>내 점수와 상대 점수를 비교해 결과를 표시.</summary>
+    private void ShowResultByScore(int myScore, int theirScore)
+    {
+        bool isWin = myScore > theirScore;
+        // 동점은 패배 처리 (필요하면 변경 가능)
+        Debug.Log($"[MultiGameManager] ShowResultByScore my={myScore} their={theirScore} win={isWin}");
+        ShowResult(isWin);
+    }
 
     private void ShowResult(bool isWin)
     {

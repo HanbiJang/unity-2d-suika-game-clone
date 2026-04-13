@@ -467,7 +467,7 @@ SpriteRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 0
   m_Sprite: {fileID: 7482667652216324306, guid: 311925a002f4447b3a28927169b83ea6, type: 3}
-  m_Color: {r: 1, g: 1, b: 1, a: 0.78039217}
+  m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
   m_FlipY: 0
   m_DrawMode: 0
@@ -1554,9 +1554,11 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   localFruitManager: {fileID: 943174897}
+  localGameObjects: {fileID: 1927377961}
   nextFruitParent_Other: {fileID: 766760538}
   fruitParent_Other: {fileID: 1118309099}
   otherScoreText: {fileID: 695430069}
+  otherGameObjects: {fileID: 373163040}
   multiResultCanvas: {fileID: 1330708047}
   resultText: {fileID: 1113573928}
 --- !u!1 &394278369
@@ -3558,7 +3560,7 @@ SpriteRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 5
   m_Sprite: {fileID: 7482667652216324306, guid: 311925a002f4447b3a28927169b83ea6, type: 3}
-  m_Color: {r: 0.9725491, g: 0.8470589, b: 0.5254902, a: 1}
+  m_Color: {r: 0.9725491, g: 0.8470589, b: 0.5254902, a: 0}
   m_FlipX: 0
   m_FlipY: 0
   m_DrawMode: 0
@@ -3576,7 +3578,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1144322863}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -0.1363, y: 3.15, z: 0}
+  m_LocalPosition: {x: -0.1363, y: 3.14, z: 0}
   m_LocalScale: {x: 6.6822376, y: 0.16615698, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -5568,7 +5570,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_Material: {fileID: 0}
-  m_Color: {r: 0.1509434, g: 0.1509434, b: 0.1509434, a: 0.68235296}
+  m_Color: {r: 0.1509434, g: 0.1509434, b: 0.1509434, a: 0.80784315}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
