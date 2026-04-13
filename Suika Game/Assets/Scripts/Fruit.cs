@@ -13,27 +13,50 @@ public class Fruit : MonoBehaviour
     bool isMerge;
     bool isSounded = false;
 
-    /// <summary>현재 머지 애니메이션 실행 중인지. 스냅샷 보정 스킵 여부 판단에 사용.</summary>
+    /// <summary>현재 머지 애니메이션 실행 중인지.</summary>
     public bool IsMerging => isMerge;
 
     /// <summary>
     /// 드롭 순서 고유 ID. 네트워크 상에서 같은 과일을 특정하기 위해 사용.
-    /// FruitManager.CreateFruit()에서 할당, MultiGameManager.CreateOtherFruit()에서 복사.
+    /// FruitManager.CreateFruit()에서 할당, MultiGameManager에서 복사.
     /// </summary>
     [HideInInspector] public int dropId = -1;
 
     /// <summary>
     /// true면 상대방 표시용 과일.
     /// - 로컬 점수/fruitMaxLevel에 영향 없음
-    /// - OnCollisionEnter2D에서 로컬 머지 실행 안 함 (네트워크 이벤트로만 머지)
+    /// - OnCollisionEnter2D에서 로컬 머지 실행 안 함
+    /// - 물리 완전 비활성: 위치는 스냅샷으로만 결정
     /// </summary>
     [HideInInspector] public bool isOtherPlayerFruit = false;
+
+    // ─── 네트워크 보간용 ─────────────────────────────────────────
+    [HideInInspector] public Vector3 networkTargetLocalPos;
+    [HideInInspector] public float   networkTargetRot;
+    [HideInInspector] public bool    hasNetworkTarget = false;
+
+    /// <summary>보간 속도. 클수록 빠르게 따라감.</summary>
+    const float LERP_SPEED = 20f;
 
     int[] scoreStandard = { 0, 1, 3, 6, 10, 15, 21, 28, 36, 45, 55, 66 };
 
     private void Start()
     {
         fruitManager = GameObject.Find("FruitManager").GetComponent<FruitManager>();
+    }
+
+    private void Update()
+    {
+        // 상대방 과일: 스냅샷 목표 위치를 향해 부드럽게 보간
+        if (isOtherPlayerFruit && hasNetworkTarget)
+        {
+            transform.localPosition = Vector3.Lerp(
+                transform.localPosition, networkTargetLocalPos, Time.deltaTime * LERP_SPEED);
+
+            float currentRot = transform.localRotation.eulerAngles.z;
+            float newRot = Mathf.LerpAngle(currentRot, networkTargetRot, Time.deltaTime * LERP_SPEED);
+            transform.localRotation = Quaternion.Euler(0f, 0f, newRot);
+        }
     }
 
     public void InitFruit(List<Fruit> fruits, GameObject fruitGameObject, int level)
@@ -77,7 +100,6 @@ public class Fruit : MonoBehaviour
         }
     }
 
-    // other 파라미터 추가: dropId 참조 및 네트워크 이벤트 전송용
     IEnumerator MergeOther(Fruit otherFruit, Transform Tother, Rigidbody2D Rother)
     {
         // 머지 시작 즉시 네트워크에 알림 (애니메이션 시작과 동기화)
@@ -122,67 +144,27 @@ public class Fruit : MonoBehaviour
     }
 
     /// <summary>
-    /// MultiGameManager에서 네트워크 머지 이벤트 수신 시 호출.
-    /// 애니메이션 포함한 머지를 실행하고 상대 과일을 제거.
+    /// 상대방 과일 즉시 머지 (물리 없음, 애니메이션 없음).
+    /// otherFruit을 즉시 파괴하고, 자신의 레벨/스프라이트/크기를 갱신.
+    /// 위치는 다음 스냅샷에서 자연스럽게 보정.
     /// </summary>
     public void ApplyNetworkMerge(Fruit otherFruit, int newLevel)
     {
-        if (isMerge) return;
-        isMerge = true;
-        otherFruit.isMerge = true;
-        StartCoroutine(NetworkMergeAnim(otherFruit, newLevel));
-    }
-
-    IEnumerator NetworkMergeAnim(Fruit otherFruit, int newLevel)
-    {
-        if (otherFruit == null || otherFruit.FruitGameObject == null)
+        // other 과일 즉시 제거
+        if (otherFruit != null && otherFruit.FruitGameObject != null)
         {
-            // 조기 종료 시 isMerge 리셋 → 이 과일이 이후 머지에 다시 참여 가능
-            isMerge = false;
-            yield break;
+            otherFruit.FruitGameObject.SetActive(false);
+            Destroy(otherFruit.FruitGameObject);
         }
 
-        Transform Tother = otherFruit.FruitGameObject.transform;
-        Rigidbody2D Rother = otherFruit.FruitGameObject.GetComponent<Rigidbody2D>();
-
-        Rother.simulated = false;
-        this.GetComponent<Rigidbody2D>().simulated = false;
-
-        int frameCnt = 0;
-        while (frameCnt < 20)
+        // 자신 레벨업
+        if (this.level != FruitManager.maxLevel && fruitManager != null)
         {
-            if (Tother == null) break;
-            frameCnt++;
-            Tother.position = Vector3.Lerp(Tother.position, this.transform.position, 0.1f);
-            yield return new WaitForSeconds(0.025f);
-        }
-
-        if (Tother != null)
-        {
-            Tother.gameObject.SetActive(false);
-            Destroy(Tother.gameObject);
-        }
-
-        this.GetComponent<Rigidbody2D>().simulated = true;
-        this.GetComponent<Rigidbody2D>().velocity = Vector2.zero;
-        this.GetComponent<Rigidbody2D>().angularVelocity = 0f;
-
-        if (fruitManager != null)
-        {
-            fruitManager.PlayEffect(gameObject.transform, fruitManager.MergeEffectGameObject);
-            fruitManager.EffectSoundPlay(EffectSound.Merge);
-        }
-
-        if (this.level != FruitManager.maxLevel)
-        {
-            if (fruitManager != null)
-                gameObject.GetComponent<SpriteRenderer>().sprite = fruitManager.fruitSprite[newLevel - 1];
+            gameObject.GetComponent<SpriteRenderer>().sprite = fruitManager.fruitSprite[newLevel - 1];
             float SizeUp = 0.2f;
             this.transform.localScale += new Vector3(SizeUp, SizeUp, SizeUp);
             this.level = newLevel;
         }
-
-        isMerge = false;
     }
 
     void FruitSoundPlay()

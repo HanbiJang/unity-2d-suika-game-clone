@@ -441,10 +441,12 @@ public class FruitManager : MonoBehaviour
     {
         public int   dropId;
         public float x, y, rot;
-        public float vx, vy, angVel;
-        public bool  simulated;
     }
 
+    /// <summary>
+    /// 모든 살아있는 과일의 위치 스냅샷.
+    /// 수신측은 물리를 사용하지 않으므로 위치/회전만 전달.
+    /// </summary>
     public FruitSnapshot[] GetFruitStates()
     {
         var result = new List<FruitSnapshot>();
@@ -452,23 +454,15 @@ public class FruitManager : MonoBehaviour
         {
             if (fruit == null) continue;
             var go = fruit.FruitGameObject;
-            if (go == null) continue;
-            // 머지 애니메이션 중인 과일(겹친 위치)은 스냅샷에서 제외
-            // → 수신측에 "겹친 위치"가 전달되면 물리 충돌로 튕겨나가는 현상 방지
-            if (fruit.IsMerging) continue;
-            var rb = go.GetComponent<Rigidbody2D>();
-            if (rb == null) continue;
+            if (go == null || !go.activeInHierarchy) continue;
 
             Vector2 lp  = go.transform.localPosition;
             float   rot = go.transform.localRotation.eulerAngles.z;
 
             result.Add(new FruitSnapshot
             {
-                dropId    = fruit.dropId,
-                x         = lp.x, y = lp.y, rot = rot,
-                vx        = rb.velocity.x, vy = rb.velocity.y,
-                angVel    = rb.angularVelocity,
-                simulated = rb.simulated
+                dropId = fruit.dropId,
+                x = lp.x, y = lp.y, rot = rot
             });
         }
         return result.ToArray();

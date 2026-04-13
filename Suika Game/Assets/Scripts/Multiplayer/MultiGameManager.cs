@@ -7,8 +7,11 @@ using Photon.Realtime;
 using ExitGames.Client.Photon;
 
 /// <summary>
-/// MultiModeScene 전용 멀티플레이어 동기화 매니저
-/// GameManagers 오브젝트에 부착
+/// MultiModeScene 전용 멀티플레이어 동기화 매니저.
+///
+/// ★ 핵심 설계: 상대방 과일은 물리(Rigidbody2D) 완전 비활성.
+/// 위치는 오직 스냅샷 데이터 → Lerp 보간으로만 결정.
+/// 머지는 즉시 처리 (애니메이션 없음, 충돌 없음).
 /// </summary>
 public class MultiGameManager : MonoBehaviourPunCallbacks, IOnEventCallback
 {
@@ -18,38 +21,28 @@ public class MultiGameManager : MonoBehaviourPunCallbacks, IOnEventCallback
     const byte EVT_SCORE_UPDATE = 103;
     const byte EVT_GAME_OVER    = 104;
     const byte EVT_FRUIT_MERGE  = 105;
-    const byte EVT_FRUIT_CREATE = 106;  // 과일 생성(들기)
-    const byte EVT_FRUIT_STATE  = 107;  // 전체 위치 스냅샷 (물리 보정용)
+    const byte EVT_FRUIT_CREATE = 106;
+    const byte EVT_FRUIT_STATE  = 107;
 
-    /// <summary>스냅샷 전송 간격 (초). 낮을수록 정확하나 트래픽 증가.</summary>
-    const float SNAPSHOT_INTERVAL = 0.3f;
+    /// <summary>스냅샷 전송 간격 (초). 수신측 Lerp 보간이 있으므로 0.1초면 충분히 부드러움.</summary>
+    const float SNAPSHOT_INTERVAL = 0.1f;
 
     // ─── Inspector 연결 필드 ──────────────────────────────────────
     [Header("Local Player")]
     [SerializeField] private FruitManager localFruitManager;
 
     [Header("Other Player Display")]
-    [Tooltip("NextOneImg_Other > NextFruitParent")]
     [SerializeField] private Transform nextFruitParent_Other;
-
-    [Tooltip("GameObjects_Other > FruitParent")]
     [SerializeField] private Transform fruitParent_Other;
-
-    [Tooltip("ScoreImg_Other 하위의 ScoreText (Text 컴포넌트)")]
     [SerializeField] private Text otherScoreText;
 
     [Header("Multi Result UI")]
-    [Tooltip("승/패 결과를 보여줄 Canvas (기본 비활성화)")]
     [SerializeField] private GameObject multiResultCanvas;
-
-    [Tooltip("'승리!' / '패배...' 를 표시할 Text")]
     [SerializeField] private Text resultText;
 
     // ─── 내부 상태 ────────────────────────────────────────────────
     private GameObject otherNextFruitModel;
     private bool gameEnded = false;
-
-    /// <summary>dropId → 상대방 박스에 생성된 Fruit 컴포넌트 매핑</summary>
     private Dictionary<int, Fruit> otherFruits = new Dictionary<int, Fruit>();
 
     // ─────────────────────────────────────────────────────────────
@@ -100,7 +93,6 @@ public class MultiGameManager : MonoBehaviourPunCallbacks, IOnEventCallback
             new RaiseEventOptions { Receivers = ReceiverGroup.Others }, SendOptions.SendReliable);
     }
 
-    /// <summary>과일 생성(들기): 수신측은 physics OFF 상태로 과일 표시</summary>
     private void SendFruitCreate(int level, float localX, float localY, float rotation, int dropId)
     {
         if (!PhotonNetwork.IsConnected) return;
@@ -109,7 +101,6 @@ public class MultiGameManager : MonoBehaviourPunCallbacks, IOnEventCallback
             new RaiseEventOptions { Receivers = ReceiverGroup.Others }, SendOptions.SendReliable);
     }
 
-    /// <summary>과일 드롭(놓기): 수신측은 기존 과일 위치 갱신 후 physics ON</summary>
     private void SendFruitDrop(int dropId, float localX, float localY, float rotation)
     {
         if (!PhotonNetwork.IsConnected) return;
@@ -141,7 +132,7 @@ public class MultiGameManager : MonoBehaviourPunCallbacks, IOnEventCallback
     }
 
     // ─────────────────────────────────────────────────────────────
-    // 주기적 위치 스냅샷
+    // 주기적 위치 스냅샷 (0.1초마다)
     // ─────────────────────────────────────────────────────────────
 
     private IEnumerator SnapshotLoop()
@@ -159,8 +150,8 @@ public class MultiGameManager : MonoBehaviourPunCallbacks, IOnEventCallback
         var states = localFruitManager.GetFruitStates();
         if (states.Length == 0) return;
 
-        // 포맷: [ count, dropId0, x0, y0, rot0, vx0, vy0, angVel0, simulated0, dropId1, ... ]
-        const int FIELDS = 8; // dropId + x + y + rot + vx + vy + angVel + simulated
+        // 포맷: [ count, dropId0, x0, y0, rot0, dropId1, x1, y1, rot1, ... ]
+        const int FIELDS = 4; // dropId, x, y, rot
         object[] data = new object[1 + states.Length * FIELDS];
         data[0] = states.Length;
 
@@ -172,17 +163,12 @@ public class MultiGameManager : MonoBehaviourPunCallbacks, IOnEventCallback
             data[b + 1] = s.x;
             data[b + 2] = s.y;
             data[b + 3] = s.rot;
-            data[b + 4] = s.vx;
-            data[b + 5] = s.vy;
-            data[b + 6] = s.angVel;
-            data[b + 7] = s.simulated;
         }
 
-        // EVT_FRUIT_MERGE(Reliable)보다 먼저 도착하면 안 되므로 Reliable로 전송
-        // → 같은 채널에서 순서 보장: 머지 이벤트 먼저, 스냅샷 나중에 도착
+        // Unreliable: 유실돼도 다음 패킷이 바로 옴 (0.1초 간격). 지연 최소화.
         PhotonNetwork.RaiseEvent(EVT_FRUIT_STATE, data,
             new RaiseEventOptions { Receivers = ReceiverGroup.Others },
-            SendOptions.SendReliable);
+            SendOptions.SendUnreliable);
     }
 
     // ─────────────────────────────────────────────────────────────
@@ -191,7 +177,7 @@ public class MultiGameManager : MonoBehaviourPunCallbacks, IOnEventCallback
 
     private void OnLocalGameOver()
     {
-        Debug.Log("[MultiGameManager] OnLocalGameOver called → ShowResult(false)");
+        Debug.Log("[MultiGameManager] OnLocalGameOver called");
         SendGameOver();
         ShowResult(false);
     }
@@ -238,7 +224,7 @@ public class MultiGameManager : MonoBehaviourPunCallbacks, IOnEventCallback
                 float localY   = (float)data[2];
                 float rotation = (float)data[3];
                 int   dropId   = (int)data[4];
-                CreateOtherFruitHeld(level, localX, localY, rotation, dropId);
+                CreateOtherFruit(level, localX, localY, rotation, dropId);
                 break;
             }
 
@@ -249,7 +235,7 @@ public class MultiGameManager : MonoBehaviourPunCallbacks, IOnEventCallback
                 float localX   = (float)data[1];
                 float localY   = (float)data[2];
                 float rotation = (float)data[3];
-                DropOtherFruit(dropId, localX, localY, rotation);
+                OnOtherFruitDropped(dropId, localX, localY, rotation);
                 break;
             }
 
@@ -289,25 +275,17 @@ public class MultiGameManager : MonoBehaviourPunCallbacks, IOnEventCallback
 
     private void ShowResult(bool isWin)
     {
-        Debug.Log($"[MultiGameManager] ShowResult called. isWin={isWin}, gameEnded={gameEnded}, multiResultCanvas={multiResultCanvas}");
-
+        Debug.Log($"[MultiGameManager] ShowResult isWin={isWin}, gameEnded={gameEnded}");
         if (gameEnded) return;
         gameEnded = true;
 
         if (multiResultCanvas != null)
-        {
             multiResultCanvas.SetActive(true);
-            Debug.Log("[MultiGameManager] multiResultCanvas activated.");
-        }
         else
-        {
-            Debug.LogError("[MultiGameManager] multiResultCanvas가 Inspector에 할당되지 않았습니다!");
-        }
+            Debug.LogError("[MultiGameManager] multiResultCanvas가 할당되지 않았습니다!");
 
         if (resultText != null)
             resultText.text = isWin ? "승리!" : "패배...";
-        else
-            Debug.LogWarning("[MultiGameManager] resultText가 Inspector에 할당되지 않았습니다.");
     }
 
     // ─────────────────────────────────────────────────────────────
@@ -330,10 +308,10 @@ public class MultiGameManager : MonoBehaviourPunCallbacks, IOnEventCallback
     }
 
     // ─────────────────────────────────────────────────────────────
-    // 상대방 과일: 생성(들기) - physics OFF
+    // 상대방 과일: 생성 (물리 항상 OFF)
     // ─────────────────────────────────────────────────────────────
 
-    private void CreateOtherFruitHeld(int level, float localX, float localY, float rotation, int dropId)
+    private void CreateOtherFruit(int level, float localX, float localY, float rotation, int dropId)
     {
         if (fruitParent_Other == null) return;
 
@@ -345,38 +323,39 @@ public class MultiGameManager : MonoBehaviourPunCallbacks, IOnEventCallback
         go.transform.localScale = new Vector3(size, size, size);
         go.GetComponent<SpriteRenderer>().sprite = localFruitManager.fruitSprite[level - 1];
 
+        // ★ 물리 완전 비활성. Collider도 꺼서 어떤 충돌도 발생하지 않음.
+        Rigidbody2D rb = go.GetComponent<Rigidbody2D>();
+        rb.simulated = false;
+
+        Collider2D col = go.GetComponent<Collider2D>();
+        if (col != null) col.enabled = false;
+
         Fruit fruit = go.GetComponent<Fruit>();
         fruit.FruitGameObject    = go;
         fruit.level              = level;
         fruit.dropId             = dropId;
         fruit.isOtherPlayerFruit = true;
 
-        go.GetComponent<Rigidbody2D>().simulated = false; // 들고 있는 상태 → physics OFF
-
         otherFruits[dropId] = fruit;
     }
 
     // ─────────────────────────────────────────────────────────────
-    // 상대방 과일: 드롭(놓기) - 위치 갱신 후 physics ON
+    // 상대방 과일: 드롭 (위치만 갱신, 물리 여전히 OFF)
     // ─────────────────────────────────────────────────────────────
 
-    private void DropOtherFruit(int dropId, float localX, float localY, float rotation)
+    private void OnOtherFruitDropped(int dropId, float localX, float localY, float rotation)
     {
-        if (!otherFruits.TryGetValue(dropId, out Fruit fruit))
-        {
-            Debug.LogWarning($"[MultiGameManager] DropOtherFruit: dropId={dropId} not found");
-            return;
-        }
-
+        if (!otherFruits.TryGetValue(dropId, out Fruit fruit)) return;
         if (fruit == null || fruit.FruitGameObject == null) return;
 
-        fruit.FruitGameObject.transform.localPosition = new Vector3(localX, localY, 0f);
-        fruit.FruitGameObject.transform.localRotation = Quaternion.Euler(0f, 0f, rotation);
-        fruit.FruitGameObject.GetComponent<Rigidbody2D>().simulated = true;
+        // 드롭 위치를 보간 타겟으로 설정 → Fruit.Update에서 부드럽게 이동
+        fruit.networkTargetLocalPos = new Vector3(localX, localY, 0f);
+        fruit.networkTargetRot      = rotation;
+        fruit.hasNetworkTarget      = true;
     }
 
     // ─────────────────────────────────────────────────────────────
-    // 상대방 과일: 머지 적용
+    // 상대방 과일: 머지 (즉시 처리, 애니메이션/물리 없음)
     // ─────────────────────────────────────────────────────────────
 
     private void ApplyOtherMerge(int survivorDropId, int otherDropId, int newLevel)
@@ -392,88 +371,38 @@ public class MultiGameManager : MonoBehaviourPunCallbacks, IOnEventCallback
             return;
         }
 
-        if (survivor.IsMerging)
-        {
-            // survivor가 다른 머지 애니메이션 중 → 완료될 때까지 대기 후 재시도
-            StartCoroutine(RetryMerge(survivorDropId, otherDropId, newLevel));
-            return;
-        }
-
+        // 딕셔너리에서 제거
         otherFruits.Remove(otherDropId);
-        survivor.ApplyNetworkMerge(other, newLevel);
-    }
 
-    /// <summary>
-    /// survivor가 다른 머지 애니메이션 중일 때 재시도.
-    /// 연속 머지(ex. 포도A+B, 포도C+D, 오렌지A+C)가 빠르게 일어날 때 이벤트가 무시되는 버그 방지.
-    /// </summary>
-    private IEnumerator RetryMerge(int survivorDropId, int otherDropId, int newLevel, int attempt = 0)
-    {
-        if (attempt >= 20)
-        {
-            Debug.LogWarning($"[MultiGameManager] RetryMerge: 재시도 초과, dropId={survivorDropId}");
-            yield break;
-        }
-
-        yield return new WaitForSeconds(0.05f); // 50ms 후 재시도
-
-        if (!otherFruits.TryGetValue(survivorDropId, out Fruit survivor)) yield break;
-        if (!otherFruits.TryGetValue(otherDropId, out Fruit other))       yield break;
-
-        if (survivor.IsMerging)
-        {
-            // 아직 바쁨 → 다시 대기
-            StartCoroutine(RetryMerge(survivorDropId, otherDropId, newLevel, attempt + 1));
-            yield break;
-        }
-
-        otherFruits.Remove(otherDropId);
+        // 즉시 머지: 애니메이션 없음, 물리 없음, 위치는 스냅샷이 처리
         survivor.ApplyNetworkMerge(other, newLevel);
     }
 
     // ─────────────────────────────────────────────────────────────
-    // 스냅샷 수신 → 상대방 과일 위치/속도 강제 보정
+    // 스냅샷 수신 → 보간 타겟 갱신 (물리 없음, 위치만)
     // ─────────────────────────────────────────────────────────────
 
     private void ApplyFruitSnapshot(object[] data)
     {
         int count = (int)data[0];
-        const int FIELDS = 8;
+        const int FIELDS = 4;
 
         for (int i = 0; i < count; i++)
         {
             int b = 1 + i * FIELDS;
 
-            int   dropId    = (int)data[b + 0];
-            float x         = (float)data[b + 1];
-            float y         = (float)data[b + 2];
-            float rot       = (float)data[b + 3];
-            float vx        = (float)data[b + 4];
-            float vy        = (float)data[b + 5];
-            float angVel    = (float)data[b + 6];
-            bool  simulated = (bool)data[b + 7];
+            int   dropId = (int)data[b + 0];
+            float x      = (float)data[b + 1];
+            float y      = (float)data[b + 2];
+            float rot    = (float)data[b + 3];
 
             if (!otherFruits.TryGetValue(dropId, out Fruit fruit)) continue;
             if (fruit == null || fruit.FruitGameObject == null) continue;
 
-            // 머지 애니메이션 중인 과일은 스냅샷으로 덮어쓰지 않음
-            // → 애니메이션이 끝난 뒤 다음 스냅샷에서 자연스럽게 보정됨
-            if (fruit.IsMerging) continue;
-
-            var go = fruit.FruitGameObject;
-            var rb = go.GetComponent<Rigidbody2D>();
-            if (rb == null) continue;
-
-            go.transform.localPosition = new Vector3(x, y, 0f);
-            go.transform.localRotation = Quaternion.Euler(0f, 0f, rot);
-
-            if (simulated)
-            {
-                rb.simulated      = true;
-                rb.velocity        = new Vector2(vx, vy);
-                rb.angularVelocity = angVel;
-            }
-            // simulated=false(들고 있는 과일)는 위치만 갱신, 속도 불필요
+            // Lerp 보간 타겟 설정 → Fruit.Update()에서 부드럽게 이동
+            fruit.networkTargetLocalPos = new Vector3(x, y, 0f);
+            fruit.networkTargetRot      = rot;
+            fruit.hasNetworkTarget      = true;
         }
     }
 }
