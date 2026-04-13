@@ -74,3 +74,183 @@ Suika Game/Assets/PlayFabEditorExtensions/
 Suika Game/Assets/PlayFabSDK/
 Suika Game/Assets/Photon/
 Suika Game/Assets/Photon.meta
+빌드/Suika Game.exe
+빌드/UnityCrashHandler64.exe
+빌드/UnityPlayer.dll
+빌드/WinPixEventRuntime.dll
+빌드/MonoBleedingEdge/EmbedRuntime/mono-2.0-bdwgc.dll
+빌드/MonoBleedingEdge/EmbedRuntime/MonoPosixHelper.dll
+빌드/MonoBleedingEdge/etc/mono/browscap.ini
+빌드/MonoBleedingEdge/etc/mono/config
+빌드/MonoBleedingEdge/etc/mono/2.0/DefaultWsdlHelpGenerator.aspx
+빌드/MonoBleedingEdge/etc/mono/2.0/machine.config
+빌드/MonoBleedingEdge/etc/mono/2.0/settings.map
+빌드/MonoBleedingEdge/etc/mono/2.0/web.config
+빌드/MonoBleedingEdge/etc/mono/2.0/Browsers/Compat.browser
+빌드/MonoBleedingEdge/etc/mono/4.0/DefaultWsdlHelpGenerator.aspx
+빌드/MonoBleedingEdge/etc/mono/4.0/machine.config
+빌드/MonoBleedingEdge/etc/mono/4.0/settings.map
+빌드/MonoBleedingEdge/etc/mono/4.0/web.config
+빌드/MonoBleedingEdge/etc/mono/4.0/Browsers/Compat.browser
+빌드/MonoBleedingEdge/etc/mono/4.5/DefaultWsdlHelpGenerator.aspx
+빌드/MonoBleedingEdge/etc/mono/4.5/machine.config
+빌드/MonoBleedingEdge/etc/mono/4.5/settings.map
+빌드/MonoBleedingEdge/etc/mono/4.5/web.config
+빌드/MonoBleedingEdge/etc/mono/4.5/Browsers/Compat.browser
+빌드/MonoBleedingEdge/etc/mono/mconfig/config.xml
+빌드/Suika Game_BurstDebugInformation_DoNotShip/Data/Plugins/x86_64/lib_burst_generated.txt
+빌드/Suika Game_Data/app.info
+빌드/Suika Game_Data/boot.config
+빌드/Suika Game_Data/globalgamemanagers
+빌드/Suika Game_Data/globalgamemanagers.assets
+빌드/Suika Game_Data/level0
+빌드/Suika Game_Data/level1
+빌드/Suika Game_Data/level2
+빌드/Suika Game_Data/level3
+빌드/Suika Game_Data/resources.assets
+빌드/Suika Game_Data/resources.assets.resS
+빌드/Suika Game_Data/resources.resource
+빌드/Suika Game_Data/RuntimeInitializeOnLoads.json
+빌드/Suika Game_Data/ScriptingAssemblies.json
+빌드/Suika Game_Data/sharedassets0.assets
+빌드/Suika Game_Data/sharedassets0.assets.resS
+빌드/Suika Game_Data/sharedassets1.assets
+빌드/Suika Game_Data/sharedassets2.assets
+빌드/Suika Game_Data/sharedassets2.assets.resS
+빌드/Suika Game_Data/sharedassets3.assets
+빌드/Suika Game_Data/Managed/Assembly-CSharp.dll
+빌드/Suika Game_Data/Managed/Mono.Security.dll
+빌드/Suika Game_Data/Managed/mscorlib.dll
+빌드/Suika Game_Data/Managed/netstandard.dll
+빌드/Suika Game_Data/Managed/Newtonsoft.Json.dll
+빌드/Suika Game_Data/Managed/Photon3Unity3D.dll
+빌드/Suika Game_Data/Managed/PhotonChat.dll
+빌드/Suika Game_Data/Managed/PhotonRealtime.dll
+빌드/Suika Game_Data/Managed/PhotonUnityNetworking.Demos.dll
+빌드/Suika Game_Data/Managed/PhotonUnityNetworking.dll
+빌드/Suika Game_Data/Managed/PhotonUnityNetworking.Utilities.dll
+빌드/Suika Game_Data/Managed/System.ComponentModel.Composition.dll
+빌드/Suika Game_Data/Managed/System.Configuration.dll
+빌드/Suika Game_Data/Managed/System.Core.dll
+빌드/Suika Game_Data/Managed/System.Data.DataSetExtensions.dll
+빌드/Suika Game_Data/Managed/System.Data.dll
+빌드/Suika Game_Data/Managed/System.dll
+빌드/Suika Game_Data/Managed/System.Drawing.dll
+빌드/Suika Game_Data/Managed/System.EnterpriseServices.dll
+빌드/Suika Game_Data/Managed/System.IO.Compression.dll
+빌드/Suika Game_Data/Managed/System.IO.Compression.FileSystem.dll
+빌드/Suika Game_Data/Managed/System.Net.Http.dll
+빌드/Suika Game_Data/Managed/System.Numerics.dll
+빌드/Suika Game_Data/Managed/System.Runtime.dll
+빌드/Suika Game_Data/Managed/System.Runtime.Serialization.dll
+빌드/Suika Game_Data/Managed/System.Security.dll
+빌드/Suika Game_Data/Managed/System.ServiceModel.Internals.dll
+빌드/Suika Game_Data/Managed/System.Transactions.dll
+빌드/Suika Game_Data/Managed/System.Xml.dll
+빌드/Suika Game_Data/Managed/System.Xml.Linq.dll
+빌드/Suika Game_Data/Managed/Unity.2D.Animation.Runtime.dll
+빌드/Suika Game_Data/Managed/Unity.2D.Common.Runtime.dll
+빌드/Suika Game_Data/Managed/Unity.2D.IK.Runtime.dll
+빌드/Suika Game_Data/Managed/Unity.2D.PixelPerfect.dll
+빌드/Suika Game_Data/Managed/Unity.2D.SpriteShape.Runtime.dll
+빌드/Suika Game_Data/Managed/Unity.2D.Tilemap.Extras.dll
+빌드/Suika Game_Data/Managed/Unity.Burst.Cecil.dll
+빌드/Suika Game_Data/Managed/Unity.Burst.Cecil.Mdb.dll
+빌드/Suika Game_Data/Managed/Unity.Burst.Cecil.Pdb.dll
+빌드/Suika Game_Data/Managed/Unity.Burst.Cecil.Rocks.dll
+빌드/Suika Game_Data/Managed/Unity.Burst.dll
+빌드/Suika Game_Data/Managed/Unity.Burst.Unsafe.dll
+빌드/Suika Game_Data/Managed/Unity.InternalAPIEngineBridge.001.dll
+빌드/Suika Game_Data/Managed/Unity.Mathematics.dll
+빌드/Suika Game_Data/Managed/Unity.Services.Core.Analytics.dll
+빌드/Suika Game_Data/Managed/Unity.Services.Core.Configuration.dll
+빌드/Suika Game_Data/Managed/Unity.Services.Core.Device.dll
+빌드/Suika Game_Data/Managed/Unity.Services.Core.dll
+빌드/Suika Game_Data/Managed/Unity.Services.Core.Environments.dll
+빌드/Suika Game_Data/Managed/Unity.Services.Core.Environments.Internal.dll
+빌드/Suika Game_Data/Managed/Unity.Services.Core.Internal.dll
+빌드/Suika Game_Data/Managed/Unity.Services.Core.Networking.dll
+빌드/Suika Game_Data/Managed/Unity.Services.Core.Registration.dll
+빌드/Suika Game_Data/Managed/Unity.Services.Core.Scheduler.dll
+빌드/Suika Game_Data/Managed/Unity.Services.Core.Telemetry.dll
+빌드/Suika Game_Data/Managed/Unity.Services.Core.Threading.dll
+빌드/Suika Game_Data/Managed/Unity.TextMeshPro.dll
+빌드/Suika Game_Data/Managed/Unity.Timeline.dll
+빌드/Suika Game_Data/Managed/Unity.VisualScripting.Antlr3.Runtime.dll
+빌드/Suika Game_Data/Managed/Unity.VisualScripting.Core.dll
+빌드/Suika Game_Data/Managed/Unity.VisualScripting.Flow.dll
+빌드/Suika Game_Data/Managed/Unity.VisualScripting.State.dll
+빌드/Suika Game_Data/Managed/UnityEngine.AccessibilityModule.dll
+빌드/Suika Game_Data/Managed/UnityEngine.AIModule.dll
+빌드/Suika Game_Data/Managed/UnityEngine.AndroidJNIModule.dll
+빌드/Suika Game_Data/Managed/UnityEngine.AnimationModule.dll
+빌드/Suika Game_Data/Managed/UnityEngine.ARModule.dll
+빌드/Suika Game_Data/Managed/UnityEngine.AssetBundleModule.dll
+빌드/Suika Game_Data/Managed/UnityEngine.AudioModule.dll
+빌드/Suika Game_Data/Managed/UnityEngine.ClothModule.dll
+빌드/Suika Game_Data/Managed/UnityEngine.ClusterInputModule.dll
+빌드/Suika Game_Data/Managed/UnityEngine.ClusterRendererModule.dll
+빌드/Suika Game_Data/Managed/UnityEngine.CoreModule.dll
+빌드/Suika Game_Data/Managed/UnityEngine.CrashReportingModule.dll
+빌드/Suika Game_Data/Managed/UnityEngine.DirectorModule.dll
+빌드/Suika Game_Data/Managed/UnityEngine.dll
+빌드/Suika Game_Data/Managed/UnityEngine.DSPGraphModule.dll
+빌드/Suika Game_Data/Managed/UnityEngine.GameCenterModule.dll
+빌드/Suika Game_Data/Managed/UnityEngine.GIModule.dll
+빌드/Suika Game_Data/Managed/UnityEngine.GridModule.dll
+빌드/Suika Game_Data/Managed/UnityEngine.HotReloadModule.dll
+빌드/Suika Game_Data/Managed/UnityEngine.ImageConversionModule.dll
+빌드/Suika Game_Data/Managed/UnityEngine.IMGUIModule.dll
+빌드/Suika Game_Data/Managed/UnityEngine.InputLegacyModule.dll
+빌드/Suika Game_Data/Managed/UnityEngine.InputModule.dll
+빌드/Suika Game_Data/Managed/UnityEngine.JSONSerializeModule.dll
+빌드/Suika Game_Data/Managed/UnityEngine.LocalizationModule.dll
+빌드/Suika Game_Data/Managed/UnityEngine.NVIDIAModule.dll
+빌드/Suika Game_Data/Managed/UnityEngine.ParticleSystemModule.dll
+빌드/Suika Game_Data/Managed/UnityEngine.PerformanceReportingModule.dll
+빌드/Suika Game_Data/Managed/UnityEngine.Physics2DModule.dll
+빌드/Suika Game_Data/Managed/UnityEngine.PhysicsModule.dll
+빌드/Suika Game_Data/Managed/UnityEngine.ProfilerModule.dll
+빌드/Suika Game_Data/Managed/UnityEngine.RuntimeInitializeOnLoadManagerInitializerModule.dll
+빌드/Suika Game_Data/Managed/UnityEngine.ScreenCaptureModule.dll
+빌드/Suika Game_Data/Managed/UnityEngine.SharedInternalsModule.dll
+빌드/Suika Game_Data/Managed/UnityEngine.SpriteMaskModule.dll
+빌드/Suika Game_Data/Managed/UnityEngine.SpriteShapeModule.dll
+빌드/Suika Game_Data/Managed/UnityEngine.StreamingModule.dll
+빌드/Suika Game_Data/Managed/UnityEngine.SubstanceModule.dll
+빌드/Suika Game_Data/Managed/UnityEngine.SubsystemsModule.dll
+빌드/Suika Game_Data/Managed/UnityEngine.TerrainModule.dll
+빌드/Suika Game_Data/Managed/UnityEngine.TerrainPhysicsModule.dll
+빌드/Suika Game_Data/Managed/UnityEngine.TextCoreFontEngineModule.dll
+빌드/Suika Game_Data/Managed/UnityEngine.TextCoreTextEngineModule.dll
+빌드/Suika Game_Data/Managed/UnityEngine.TextRenderingModule.dll
+빌드/Suika Game_Data/Managed/UnityEngine.TilemapModule.dll
+빌드/Suika Game_Data/Managed/UnityEngine.TLSModule.dll
+빌드/Suika Game_Data/Managed/UnityEngine.UI.dll
+빌드/Suika Game_Data/Managed/UnityEngine.UIElementsModule.dll
+빌드/Suika Game_Data/Managed/UnityEngine.UIElementsNativeModule.dll
+빌드/Suika Game_Data/Managed/UnityEngine.UIModule.dll
+빌드/Suika Game_Data/Managed/UnityEngine.UmbraModule.dll
+빌드/Suika Game_Data/Managed/UnityEngine.UNETModule.dll
+빌드/Suika Game_Data/Managed/UnityEngine.UnityAnalyticsCommonModule.dll
+빌드/Suika Game_Data/Managed/UnityEngine.UnityAnalyticsModule.dll
+빌드/Suika Game_Data/Managed/UnityEngine.UnityConnectModule.dll
+빌드/Suika Game_Data/Managed/UnityEngine.UnityCurlModule.dll
+빌드/Suika Game_Data/Managed/UnityEngine.UnityTestProtocolModule.dll
+빌드/Suika Game_Data/Managed/UnityEngine.UnityWebRequestAssetBundleModule.dll
+빌드/Suika Game_Data/Managed/UnityEngine.UnityWebRequestAudioModule.dll
+빌드/Suika Game_Data/Managed/UnityEngine.UnityWebRequestModule.dll
+빌드/Suika Game_Data/Managed/UnityEngine.UnityWebRequestTextureModule.dll
+빌드/Suika Game_Data/Managed/UnityEngine.UnityWebRequestWWWModule.dll
+빌드/Suika Game_Data/Managed/UnityEngine.VehiclesModule.dll
+빌드/Suika Game_Data/Managed/UnityEngine.VFXModule.dll
+빌드/Suika Game_Data/Managed/UnityEngine.VideoModule.dll
+빌드/Suika Game_Data/Managed/UnityEngine.VirtualTexturingModule.dll
+빌드/Suika Game_Data/Managed/UnityEngine.VRModule.dll
+빌드/Suika Game_Data/Managed/UnityEngine.WindModule.dll
+빌드/Suika Game_Data/Managed/UnityEngine.XRModule.dll
+빌드/Suika Game_Data/Managed/websocket-sharp.dll
+빌드/Suika Game_Data/Plugins/x86_64/lib_burst_generated.dll
+빌드/Suika Game_Data/Resources/unity default resources
+빌드/Suika Game_Data/Resources/unity_builtin_extra
+빌드/Suika Game_Data/StreamingAssets/UnityServicesProjectConfiguration.json

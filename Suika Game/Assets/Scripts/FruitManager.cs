@@ -56,12 +56,36 @@ public class FruitManager : MonoBehaviour
 
     public GameFlowManager GameFlowManager;
 
+    /// <summary>
+    /// 멀티 씬처럼 이름 중복이 있는 경우 여기에 직접 연결.
+    /// 비워두면 GameObject.Find() 자동 탐색 (싱글 씬 호환).
+    /// </summary>
+    [Header("Direct References (멀티 씬에서 직접 연결)")]
+    [SerializeField] private GameObject ref_FruitParent;
+    [SerializeField] private GameObject ref_Ground;
+    [SerializeField] private Text       ref_ScoreText;
+    [SerializeField] private GameObject ref_EffectParent;
+    [SerializeField] private GameObject ref_Wall_left;
+    [SerializeField] private GameObject ref_Wall_right;
+    [SerializeField] private GameObject ref_GameOverLine;
+    [SerializeField] private GameObject ref_NextFruitParent;
+    [SerializeField] private CursorControl ref_Cursor;
+
+    // Cursor 캐싱 (Update에서 매 프레임 Find 방지)
+    private CursorControl cachedCursorControl;
+
     float SizeUp = 0.2f;
 
     bool isGameRun = false;
     bool isGameOver = false;
     int nextFruitLevel = 1;
     GameObject nextFruitModel;
+
+    // 멀티플레이어 동기화 이벤트
+    public System.Action<int> OnNextFruitLevelChanged;              // 다음 과일 레벨 변경 시
+    public System.Action<int, float, float, float> OnFruitDropped;  // 드롭 시 (level, localX, localY, rotation)
+    public System.Action<int> OnScoreUpdated;                       // 점수 변경 시
+    public System.Action OnGameOverTriggered;                        // 게임오버 시
 
     Vector3 cursorPos; //���콺 Ŀ�� ��ġ, ������ ���ϸ��� ����ٴ�
 
@@ -99,6 +123,7 @@ public class FruitManager : MonoBehaviour
         if (isGameOver) return;
         isGameOver = true;
         isGameRun = false;
+        OnGameOverTriggered?.Invoke();
         GameOver();
     }
     public bool isGameRun_func()
@@ -110,21 +135,22 @@ public class FruitManager : MonoBehaviour
     {
         target = Vector3.zero;
         isReady = true;
-        fruits = new List<Fruit>(); //���� ����Ʈ �����Ҵ�
+        fruits = new List<Fruit>();
         ClickPoint = Vector2.zero;
 
         try
         {
-            FruitParent = GameObject.Find("FruitParent");
-            groundControl = GameObject.Find("Ground").GetComponent<GroundControl>();
-            ScoreText = GameObject.Find("ScoreText").GetComponent<Text>();
+            FruitParent     = ref_FruitParent     ?? GameObject.Find("FruitParent");
+            groundControl   = (ref_Ground         ?? GameObject.Find("Ground")).GetComponent<GroundControl>();
+            ScoreText       = ref_ScoreText        ?? GameObject.Find("ScoreText").GetComponent<Text>();
             ScoreTextsPosition = ScoreText.transform;
-            EffectParent = GameObject.Find("EffectParent");
-            Wall_left = GameObject.Find("Wall_left");
-            Wall_right = GameObject.Find("Wall_right");
-            Ground = GameObject.Find("Ground");
-            GameOverLine = GameObject.Find("GameOverLine");
-            NextFruitParent = GameObject.Find("NextFruitParent");
+            EffectParent    = ref_EffectParent    ?? GameObject.Find("EffectParent");
+            Wall_left       = ref_Wall_left       ?? GameObject.Find("Wall_left");
+            Wall_right      = ref_Wall_right      ?? GameObject.Find("Wall_right");
+            Ground          = ref_Ground          ?? GameObject.Find("Ground");
+            GameOverLine    = ref_GameOverLine    ?? GameObject.Find("GameOverLine");
+            NextFruitParent = ref_NextFruitParent ?? GameObject.Find("NextFruitParent");
+            cachedCursorControl = ref_Cursor      ?? GameObject.Find("Cursor")?.GetComponent<CursorControl>();
         }
         catch
         {
@@ -171,10 +197,14 @@ public class FruitManager : MonoBehaviour
                 {
                     //�������� ���߿��� ����ٴ��� ����
                     //������ Ŀ���� ����ٴ�
-                    cursorPos = GameObject.Find("Cursor").GetComponent<CursorControl>().cursorPos;
+                    cursorPos = cachedCursorControl != null
+                        ? cachedCursorControl.cursorPos
+                        : GameObject.Find("Cursor").GetComponent<CursorControl>().cursorPos;
                     if (newFruitGameObject)
                     {
-                        newFruitGameObject.transform.position = new Vector3(cursorPos.x, newFruitGameObject.transform.position.y, newFruitGameObject.transform.position.z);
+                        // 내 박스 경계(leftBorder~rightBorder) 안으로 클램핑
+                        float clampedX = Mathf.Clamp(cursorPos.x, leftBorder, rightBorder);
+                        newFruitGameObject.transform.position = new Vector3(clampedX, newFruitGameObject.transform.position.y, newFruitGameObject.transform.position.z);
                     }
                 }
             }
@@ -211,6 +241,7 @@ public class FruitManager : MonoBehaviour
     {
         //����
         nextFruitLevel = (int)UnityEngine.Random.Range(minLevel, fruitMaxLevel + 1);
+        OnNextFruitLevelChanged?.Invoke(nextFruitLevel);
 
         //������ �´� ũ�� ���� (�̴� ������)
         float size = SizeUp * (nextFruitLevel - 1);
@@ -367,6 +398,14 @@ public class FruitManager : MonoBehaviour
     {
         isSimulated = true;
         newFruitGameObject.GetComponent<Rigidbody2D>().simulated = true;
+
+        // 드롭 이벤트 발생 (멀티플레이어 동기화용)
+        // localPosition 사용: 상대방 박스(FruitParent_Other)에서도 같은 로컬 좌표로 재현 가능
+        int droppedLevel = newFruitGameObject.GetComponent<Fruit>().level;
+        float localX = newFruitGameObject.transform.localPosition.x;
+        float localY = newFruitGameObject.transform.localPosition.y;
+        float rotation = newFruitGameObject.transform.localRotation.eulerAngles.z;
+        OnFruitDropped?.Invoke(droppedLevel, localX, localY, rotation);
     }
 
     public void EffectSoundPlay(EffectSound effectSound)
@@ -394,5 +433,6 @@ public class FruitManager : MonoBehaviour
         userScore += addedScore;
         ScoreText.text = string.Format("{0:00000}", userScore);
         PlayEffect(ScoreTextsPosition, ScoreEffectGameObject);
+        OnScoreUpdated?.Invoke(userScore);
     }
 }

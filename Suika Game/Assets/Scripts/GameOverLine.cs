@@ -4,6 +4,12 @@ using UnityEngine;
 
 public class GameOverLine : MonoBehaviour
 {
+    /// <summary>
+    /// true면 상대방 박스의 GameOverLine → 로컬 게임오버를 트리거하지 않음
+    /// GameObjects_Other 하위의 GameOverLine에 체크
+    /// </summary>
+    [SerializeField] private bool isOtherPlayerLine = false;
+
     FruitManager fruitManager;
 
     private void Awake()
@@ -37,7 +43,8 @@ public class GameOverLine : MonoBehaviour
 
             if (timer >= GAME_OVER_TIME)
             {
-                fruitManager.makeGameOver();
+                if (!isOtherPlayerLine)
+                    fruitManager.makeGameOver();
                 Debug.Log("Game Over triggered by timer");
                 timer = 0f;
                 touchingFruits.Clear();

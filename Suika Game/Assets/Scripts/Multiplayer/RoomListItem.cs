@@ -15,6 +15,12 @@ public class RoomListItem : MonoBehaviour
     private System.Action<string> onJoin;
     private string roomName;
 
+    private void Awake()
+    {
+        if (txtRoomName == null) txtRoomName = GetComponentInChildren<TMP_Text>();
+        if (btnJoin == null) btnJoin = GetComponentInChildren<Button>();
+    }
+
     public void Setup(RoomInfo info, System.Action<string> callback)
     {
         roomName = info.Name;

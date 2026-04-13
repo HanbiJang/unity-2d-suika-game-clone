@@ -36,6 +36,7 @@ public class LobbyUI : MonoBehaviour
     [SerializeField] private Button btnCreate;
     [SerializeField] private Button btnJoinByName; // 방 이름으로 참가
     [SerializeField] private Button btnQuickJoin;
+    [SerializeField] private Button btnRefresh;
     [SerializeField] private Button btnBack;
     [SerializeField] private Transform roomListContent;
     [SerializeField] private GameObject roomItemPrefab; // RoomListItem 프리팹
@@ -48,8 +49,6 @@ public class LobbyUI : MonoBehaviour
     [Header("공통")]
     [SerializeField] private TMP_Text txtStatus;
 
-    private List<RoomInfo> cachedRoomList = new List<RoomInfo>();
-
     private void Start()
     {
         if (PhotonNetworkManager.Instance == null)
@@ -58,19 +57,23 @@ public class LobbyUI : MonoBehaviour
         btnCreate.onClick.AddListener(OnClickCreate);
         if (btnJoinByName != null) btnJoinByName.onClick.AddListener(OnClickJoinByName);
         btnQuickJoin.onClick.AddListener(OnClickQuickJoin);
+        if (btnRefresh != null) btnRefresh.onClick.AddListener(OnClickRefresh);
         btnBack.onClick.AddListener(OnClickBack);
         btnLeave.onClick.AddListener(OnClickLeave);
 
         PhotonNetworkManager.Instance.OnStatusChanged += UpdateStatus;
-        PhotonNetworkManager.Instance.OnRoomListUpdated += RefreshRoomList;
+        PhotonNetworkManager.Instance.OnRoomListUpdated += OnRoomListUpdated;
         PhotonNetworkManager.Instance.OnError += ShowError;
 
-        // 이미 연결된 상태면 로비 패널 바로 표시, 아니면 자동 연결
+        ShowPanel(panelLobby);
+
         if (PhotonNetwork.IsConnected && PhotonNetwork.InLobby)
-            ShowPanel(panelLobby);
+        {
+            // 이미 로비에 있으면 캐시된 목록 즉시 표시
+            RefreshRoomList(PhotonNetworkManager.Instance.CachedRoomList);
+        }
         else
         {
-            ShowPanel(panelLobby);
             PhotonNetworkManager.Instance.Connect();
             StartCoroutine(WaitAndShowLobby());
         }
@@ -80,7 +83,7 @@ public class LobbyUI : MonoBehaviour
     {
         if (PhotonNetworkManager.Instance == null) return;
         PhotonNetworkManager.Instance.OnStatusChanged -= UpdateStatus;
-        PhotonNetworkManager.Instance.OnRoomListUpdated -= RefreshRoomList;
+        PhotonNetworkManager.Instance.OnRoomListUpdated -= OnRoomListUpdated;
         PhotonNetworkManager.Instance.OnError -= ShowError;
     }
 
@@ -125,6 +128,11 @@ public class LobbyUI : MonoBehaviour
         ShowPanel(panelWaiting);
     }
 
+    private void OnClickRefresh()
+    {
+        PhotonNetworkManager.Instance.RefreshRoomList();
+    }
+
     private void OnClickBack()
     {
         PhotonNetworkManager.Instance.Disconnect();
@@ -144,21 +152,29 @@ public class LobbyUI : MonoBehaviour
     private void UpdateWaitingPanel()
     {
         if (!PhotonNetwork.InRoom) return;
-        txtRoomName.text = $"룸: {PhotonNetwork.CurrentRoom.Name}";
-        txtPlayerCount.text = $"플레이어: {PhotonNetwork.CurrentRoom.PlayerCount} / {PhotonNetworkManager.MAX_PLAYERS}";
+        txtRoomName.text = $"{PhotonNetwork.CurrentRoom.Name}";
+        // txtPlayerCount.text = $"{PhotonNetwork.CurrentRoom.PlayerCount} / {PhotonNetworkManager.MAX_PLAYERS}";
     }
 
-    private void RefreshRoomList()
+    private void OnRoomListUpdated(List<RoomInfo> roomList)
     {
-        // 기존 항목 삭제
+        Debug.Log($"[LobbyUI] OnRoomListUpdated 이벤트 수신 - 방 수: {roomList.Count}");
+        RefreshRoomList(roomList);
+    }
+
+    private void RefreshRoomList(List<RoomInfo> roomList)
+    {
+        Debug.Log($"[LobbyUI] RefreshRoomList 호출 - roomListContent: {(roomListContent == null ? "NULL" : roomListContent.name)}, roomItemPrefab: {(roomItemPrefab == null ? "NULL" : roomItemPrefab.name)}, 방 수: {roomList.Count}");
+
+        if (roomListContent == null) { Debug.LogError("[LobbyUI] roomListContent가 비어있습니다! Inspector에서 연결하세요."); return; }
+        if (roomItemPrefab == null) { Debug.LogError("[LobbyUI] roomItemPrefab이 비어있습니다! Inspector에서 연결하세요."); return; }
+
         foreach (Transform child in roomListContent)
             Destroy(child.gameObject);
 
-        // 새 목록 생성
-        foreach (RoomInfo info in cachedRoomList)
+        foreach (RoomInfo info in roomList)
         {
-            if (info.RemovedFromList) continue;
-
+            Debug.Log($"[LobbyUI]   방 아이템 생성: {info.Name}");
             GameObject item = Instantiate(roomItemPrefab, roomListContent);
             RoomListItem listItem = item.GetComponent<RoomListItem>();
             if (listItem != null)

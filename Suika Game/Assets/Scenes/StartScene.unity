@@ -2956,8 +2956,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7, type: 3}
-  m_Name:
-  m_EditorClassIdentifier:
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &1094732822
 GameObject:
   m_ObjectHideFlags: 0
@@ -3555,7 +3555,7 @@ GameObject:
   - component: {fileID: 1210550376}
   - component: {fileID: 1210550375}
   m_Layer: 5
-  m_Name: UserDisplayNameText
+  m_Name: versionText
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -3578,7 +3578,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 1, y: 1}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: -134, y: -28}
+  m_AnchoredPosition: {x: -23, y: -28}
   m_SizeDelta: {x: 160, y: 30}
   m_Pivot: {x: 1, y: 1}
 --- !u!114 &1210550375
@@ -3614,7 +3614,7 @@ MonoBehaviour:
     m_HorizontalOverflow: 1
     m_VerticalOverflow: 1
     m_LineSpacing: 1
-  m_Text: 'ID: 0000000000000000'
+  m_Text: ver. 1.0
 --- !u!222 &1210550376
 CanvasRenderer:
   m_ObjectHideFlags: 0

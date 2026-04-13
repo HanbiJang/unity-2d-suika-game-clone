@@ -16,8 +16,12 @@ public class PhotonNetworkManager : MonoBehaviourPunCallbacks
 
     // 연결 상태를 외부에서 구독할 수 있는 이벤트
     public System.Action<string> OnStatusChanged;
-    public System.Action OnRoomListUpdated;
+    public System.Action<System.Collections.Generic.List<RoomInfo>> OnRoomListUpdated;
     public System.Action<string> OnError;
+
+    // 룸 목록 캐시 (씬 전환 후에도 유지)
+    public System.Collections.Generic.List<RoomInfo> CachedRoomList { get; private set; }
+        = new System.Collections.Generic.List<RoomInfo>();
 
     private void Awake()
     {
@@ -45,7 +49,7 @@ public class PhotonNetworkManager : MonoBehaviourPunCallbacks
             NotifyStatus("이미 연결됨");
             return;
         }
-        NotifyStatus("서버 연결 중...");
+        NotifyStatus("연결 중...");
         PhotonNetwork.ConnectUsingSettings();
     }
 
@@ -64,14 +68,14 @@ public class PhotonNetworkManager : MonoBehaviourPunCallbacks
             IsOpen = true
         };
 
-        NotifyStatus($"룸 생성 중: {roomName}");
+        NotifyStatus($"방 생성 중: {roomName}");
         PhotonNetwork.CreateRoom(roomName, options);
     }
 
     /// <summary>룸 이름으로 참가</summary>
     public void JoinRoom(string roomName)
     {
-        NotifyStatus($"룸 참가 중: {roomName}");
+        NotifyStatus($"방 참가 중: {roomName}");
         PhotonNetwork.JoinRoom(roomName);
     }
 
@@ -97,7 +101,7 @@ public class PhotonNetworkManager : MonoBehaviourPunCallbacks
 
     public override void OnConnectedToMaster()
     {
-        NotifyStatus("서버 연결 완료. 로비 참가 중...");
+        ;  NotifyStatus("서버 연결 완료. 로비 참가 중...");
         PhotonNetwork.JoinLobby();
     }
 
@@ -108,22 +112,46 @@ public class PhotonNetworkManager : MonoBehaviourPunCallbacks
 
     public override void OnRoomListUpdate(System.Collections.Generic.List<RoomInfo> roomList)
     {
-        OnRoomListUpdated?.Invoke();
+        Debug.Log($"[Photon] OnRoomListUpdate 호출됨 - 수신 방 수: {roomList.Count}");
+        foreach (RoomInfo info in roomList)
+        {
+            Debug.Log($"[Photon]   방: {info.Name}, 삭제여부: {info.RemovedFromList}, 인원: {info.PlayerCount}/{info.MaxPlayers}");
+            if (info.RemovedFromList)
+                CachedRoomList.RemoveAll(r => r.Name == info.Name);
+            else
+            {
+                int idx = CachedRoomList.FindIndex(r => r.Name == info.Name);
+                if (idx >= 0)
+                    CachedRoomList[idx] = info;
+                else
+                    CachedRoomList.Add(info);
+            }
+        }
+        Debug.Log($"[Photon] 캐시 방 수: {CachedRoomList.Count}, 구독자 수: {OnRoomListUpdated?.GetInvocationList().Length ?? 0}");
+        OnRoomListUpdated?.Invoke(CachedRoomList);
+    }
+
+    /// <summary>로비 재참가로 방 목록 강제 갱신</summary>
+    public void RefreshRoomList()
+    {
+        if (!PhotonNetwork.IsConnected) return;
+        CachedRoomList.Clear();
+        PhotonNetwork.JoinLobby();
     }
 
     public override void OnCreatedRoom()
     {
-        NotifyStatus($"룸 생성 완료: {PhotonNetwork.CurrentRoom.Name}");
+        NotifyStatus($"방 생성 완료: {PhotonNetwork.CurrentRoom.Name}");
     }
 
     public override void OnCreateRoomFailed(short returnCode, string message)
     {
-        OnError?.Invoke($"룸 생성 실패: {message}");
+        OnError?.Invoke($"방 생성 실패: {message}");
     }
 
     public override void OnJoinedRoom()
     {
-        NotifyStatus($"룸 참가 완료 ({PhotonNetwork.CurrentRoom.PlayerCount}/{MAX_PLAYERS})");
+        NotifyStatus($"플레이어를 기다리는 중... ({PhotonNetwork.CurrentRoom.PlayerCount}/{MAX_PLAYERS})");
 
         // 방장이고 2명이 모이면 게임 씬으로 이동
         if (PhotonNetwork.IsMasterClient &&
@@ -135,7 +163,7 @@ public class PhotonNetworkManager : MonoBehaviourPunCallbacks
 
     public override void OnPlayerEnteredRoom(Player newPlayer)
     {
-        NotifyStatus($"상대방 입장 ({PhotonNetwork.CurrentRoom.PlayerCount}/{MAX_PLAYERS})");
+        NotifyStatus($"플레이어 입장 ({PhotonNetwork.CurrentRoom.PlayerCount}/{MAX_PLAYERS})");
 
         if (PhotonNetwork.IsMasterClient &&
             PhotonNetwork.CurrentRoom.PlayerCount == MAX_PLAYERS)
@@ -146,24 +174,24 @@ public class PhotonNetworkManager : MonoBehaviourPunCallbacks
 
     public override void OnPlayerLeftRoom(Player otherPlayer)
     {
-        NotifyStatus("상대방이 나갔습니다.");
+        NotifyStatus("다른 플레이어가 나갔습니다.");
     }
 
     public override void OnJoinRoomFailed(short returnCode, string message)
     {
-        OnError?.Invoke($"룸 참가 실패: {message}");
+        OnError?.Invoke($"방 참가 실패: {message}");
     }
 
     public override void OnJoinRandomFailed(short returnCode, string message)
     {
         // 빠른 참가 실패 시 새 룸 생성
-        NotifyStatus("빈 룸 없음. 새 룸 생성 중...");
+        NotifyStatus("방 생성 중...");
         CreateRoom("");
     }
 
     public override void OnDisconnected(DisconnectCause cause)
     {
-        NotifyStatus($"연결 해제: {cause}");
+        NotifyStatus($"온라인 해제: {cause}");
     }
 
     // ─────────────────────────────────────────────

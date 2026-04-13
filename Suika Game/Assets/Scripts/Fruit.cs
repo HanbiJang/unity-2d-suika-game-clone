@@ -5,13 +5,19 @@ using UnityEngine;
 
 public class Fruit : MonoBehaviour
 {
-    public GameObject FruitGameObject { get; set; } //°úÀÏ °ÔÀÓ ¿ÀºêÁ§Æ®
-    public int level { get; set; } //°úÀÏÀÇ ·¹º§
-    public int FruitIndex { get; set; } //°úÀÏÀÇ ¸®½ºÆ® ³» ÀÎµ¦½º
+    public GameObject FruitGameObject { get; set; } //ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Æ®
+    public int level { get; set; } //ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
+    public int FruitIndex { get; set; } //ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½Æ® ï¿½ï¿½ ï¿½Îµï¿½ï¿½ï¿½
 
     FruitManager fruitManager;
     bool isMerge;
     bool isSounded = false;
+
+    /// <summary>
+    /// trueë©´ ìƒëŒ€ë°© í‘œì‹œìš© ê³¼ì¼ â†’ ë¡œì»¬ ì ìˆ˜/fruitMaxLevelì— ì˜í–¥ ì—†ìŒ
+    /// MultiGameManagerì—ì„œ ìƒì„± ì‹œ ì„¤ì •
+    /// </summary>
+    [HideInInspector] public bool isOtherPlayerFruit = false;
 
     int[] scoreStandard = { 0, 1, 3, 6, 10, 15, 21, 28, 36, 45, 55, 66 };
 
@@ -20,7 +26,7 @@ public class Fruit : MonoBehaviour
         fruitManager = GameObject.Find("FruitManager").GetComponent<FruitManager>();
     }
 
-    //°úÀÏÀÌ Ã³À½ ¸¸µé¾îÁ³À» ¶§ ÃÊ±âÈ­ÇÑ´Ù
+    //ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ Ã³ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ ï¿½Ê±ï¿½È­ï¿½Ñ´ï¿½
     public void InitFruit(List<Fruit> fruits, GameObject fruitGameObject, int level)
     {
         this.FruitGameObject = fruitGameObject;
@@ -29,37 +35,37 @@ public class Fruit : MonoBehaviour
         this.isMerge = false;
     }
 
-    //°úÀÏÀÇ Ãæµ¹
+    //ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½æµ¹
     private void OnCollisionEnter2D(Collision2D collision)
     {
         if (collision.gameObject.tag == "Fruit")
         {
-            Fruit other = collision.gameObject.GetComponent<Fruit>(); //Ãæµ¹ÇÑ ¿ÀºêÁ§Æ®
+            Fruit other = collision.gameObject.GetComponent<Fruit>(); //ï¿½æµ¹ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Æ®
 
             FruitSoundPlay();
 
             if (other.level == this.level && !isMerge && !other.isMerge)
             {
-                //Debug.Log("Ãæµ¹!");
+                //Debug.Log("ï¿½æµ¹!");
                 Transform Tother = other.FruitGameObject.transform;
                 Rigidbody2D Rother = other.FruitGameObject.GetComponent<Rigidbody2D>();
 
-                //¿ŞÂÊ, ¿À¸¥ÂÊÀÌ¸é => ¿ŞÂÊ¿¡ ÀÖ´Â ¾Ö°¡ »ì°í ·¹º§¾÷
-                //À§, ¾Æ·¡¸é => ¾Æ·¡¿¡ ÀÖ´Â ¾Ö°¡ »ì°í ·¹º§¾÷
-                if (this.transform.position.x < Tother.position.x) //³»°¡ ¿ŞÆí
+                //ï¿½ï¿½ï¿½ï¿½, ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ì¸ï¿½ => ï¿½ï¿½ï¿½Ê¿ï¿½ ï¿½Ö´ï¿½ ï¿½Ö°ï¿½ ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+                //ï¿½ï¿½, ï¿½Æ·ï¿½ï¿½ï¿½ => ï¿½Æ·ï¿½ï¿½ï¿½ ï¿½Ö´ï¿½ ï¿½Ö°ï¿½ ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+                if (this.transform.position.x < Tother.position.x) //ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
                 {
                     isMerge = true;
                     other.isMerge = true;
-                    //»ó´ë ²ø¾î´ç±â±â & level ¾÷ or Hp ±ğ±â           
+                    //ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ & level ï¿½ï¿½ or Hp ï¿½ï¿½ï¿½           
                     StartCoroutine(MergeOther(Tother, Rother));
 
                 }
 
-                else if (this.transform.position.x == Tother.position.x && this.transform.position.y < Tother.position.y) //xÁÂÇ¥°¡ °°°í ³»°¡ ¾Æ·¡
+                else if (this.transform.position.x == Tother.position.x && this.transform.position.y < Tother.position.y) //xï¿½ï¿½Ç¥ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½Æ·ï¿½
                 {
                     isMerge = true;
                     other.isMerge = true;
-                    //»ó´ë ²ø¾î´ç±â±â & level ¾÷ & Hp ±ğ±â
+                    //ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ & level ï¿½ï¿½ & Hp ï¿½ï¿½ï¿½
                     StartCoroutine(MergeOther(Tother, Rother));
 
                 }
@@ -74,46 +80,48 @@ public class Fruit : MonoBehaviour
         this.GetComponent<Rigidbody2D>().simulated = false;
         int frameCnt = 0;
 
-        //20ÇÁ·¹ÀÓµ¿¾È ½ÇÇàÇÑ´Ù
+        //20ï¿½ï¿½ï¿½ï¿½ï¿½Óµï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½Ñ´ï¿½
         while (frameCnt < 20)
         {
             frameCnt++;
             Tother.position = Vector3.Lerp(Tother.position, this.transform.position, 0.1f);
-            yield return new WaitForSeconds(0.025f); //1ÇÁ·¹ÀÓ¿¡ while¹® 20¹ø µ¹¸®Áö ¸øÇÏ°Ô ÇÑ´Ù
+            yield return new WaitForSeconds(0.025f); //1ï¿½ï¿½ï¿½ï¿½ï¿½Ó¿ï¿½ whileï¿½ï¿½ 20ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½Ï°ï¿½ ï¿½Ñ´ï¿½
         }
-        //ÃÊ±âÈ­ÇÏ±â
+        //ï¿½Ê±ï¿½È­ï¿½Ï±ï¿½
         Rother.simulated = true;
         Rother.velocity = Vector2.zero;
         Rother.angularVelocity = 0f;
         Tother.gameObject.SetActive(false);
         Destroy(Tother.gameObject);
         this.GetComponent<Rigidbody2D>().simulated = true;
-        this.GetComponent<Rigidbody2D>().velocity = Vector2.zero;        //¼Óµµ, ¹°¸®°ª ÃÊ±âÈ­
+        this.GetComponent<Rigidbody2D>().velocity = Vector2.zero;        //ï¿½Óµï¿½, ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½Ê±ï¿½È­
         this.GetComponent<Rigidbody2D>().angularVelocity = 0f;
 
 
-        //ÆÄÆ¼Å¬ ÀÌÆåÆ® Àç»ı
+        //ï¿½ï¿½Æ¼Å¬ ï¿½ï¿½ï¿½ï¿½Æ® ï¿½ï¿½ï¿½
         fruitManager.PlayEffect(gameObject.transform, fruitManager.MergeEffectGameObject);
 
-        //»ç¿îµå Àç»ı
+        //ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½
         fruitManager.EffectSoundPlay(EffectSound.Merge);
 
-        //Á¡¼ö °»½Å
-        fruitManager.UpdateScore(this.level * scoreStandard[this.level]);
+        //ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ (ï¿½ï¿½ï¿½Ê¹ï¿½ Ç¥ï¿½Ã½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½Ì¹Ç·ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½)
+        if (!isOtherPlayerFruit)
+            fruitManager.UpdateScore(this.level * scoreStandard[this.level]);
 
-        //³ª´Â ·¹º§¾÷
+        //ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
         if (this.level != FruitManager.maxLevel)
         {
-            //·¹º§, Å©±â Áõ°¡
+            //ï¿½ï¿½ï¿½ï¿½, Å©ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
             gameObject.GetComponent<SpriteRenderer>().sprite = fruitManager.fruitSprite[(level + 1) - 1];
             float SizeUp = 0.2f;
             this.transform.localScale += new Vector3(SizeUp, SizeUp, SizeUp);
             this.level += 1;
-            //ÃÖ´ë °úÀÏ ·¹º§ Áõ°¡
-            fruitManager.fruitMaxLevel = Mathf.Max(this.level - 1, fruitManager.fruitMaxLevel);
+            //ï¿½Ö´ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ (ï¿½ï¿½ï¿½Ê¹ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½)
+            if (!isOtherPlayerFruit)
+                fruitManager.fruitMaxLevel = Mathf.Max(this.level - 1, fruitManager.fruitMaxLevel);
         }
 
-        //ÃÊ±âÈ­
+        //ï¿½Ê±ï¿½È­
         isMerge = false;
     }
 
