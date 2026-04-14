@@ -1,20 +1,105 @@
 <img width="833" height="465" alt="Image" src="https://github.com/user-attachments/assets/9d674e58-4fcc-4c30-b86b-5d653d9c18ce" />
 
-## 🎮 프로젝트 개요
+## 📋 프로젝트 정보
 
 | 항목 | 내용 |
 |------|------|
-| 장르 | 물리 퍼즐 2D 게임 |
+| 장르 | 2D 물리 퍼즐  멀티플레이 게임 |
 | 엔진 | Unity (C#) |
 | 개발 기간 | 2024.04 ~ 2024.05, 2026.04 |
 | 개발 인원 | 1인 |
-| 핵심 목표 | 물리 기반 과일 합체 시스템 |
+| 핵심 목표 | 물리 기반 과일 합체 시스템, photon 멀티플레이 기능 구현 |
+| 모티브 게임 | 수박 게임 |
 
 ---
 
-## ⚙️ 핵심 기술 및 구현 내용
+## ⚙ 핵심 기술 및 구현 내용
 
-### 1. 물리 기반 과일 합체 시스템 (`Fruit.cs`)
+### 🌐 Photon PUN2 기반 실시간 멀티플레이어
+
+**Photon PUN2 (Photon Unity Networking 2)** 를 활용하여 2인 실시간 대전 시스템을 구현했습니다.
+
+#### 룸 매칭 시스템
+- 방 직접 생성 / 방 이름으로 참가 / 빠른 매칭(JoinRandomRoom) 세 가지 참가 방식 지원
+- 방 목록 실시간 갱신 (`OnRoomListUpdate` 콜백 + 로컬 캐시 유지)
+- 방 정원은 2인으로 제한, `MaxPlayers = 2` 설정
+
+#### 매치 시작 동기화 (이중 안전장치)
+방장(MasterClient)이 2인 입장을 감지하면 0.5초 딜레이 후 두 가지 방식으로 동시에 매치 시작을 전파합니다.
+
+
+PhotonNetwork.RaiseEvent(EVT_MATCH_START, ..., EventCaching.AddToRoomCache)
+→ 룸 캐시에 적재되어 나중에 입장한 플레이어도 수신 가능
+
+Room CustomProperties["MatchStarted"] = true
+→ 이벤트 수신 전에 입장하거나 이벤트가 유실된 경우에도 OnRoomPropertiesUpdate로 복구
+
+
+두 경로 모두 `hasHandledMatchStart` 플래그로 중복 처리를 방지합니다.
+
+---
+
+### 🎮 물리 동기화 전략 - 스냅샷 보간 방식
+
+과일 물리는 **로컬 플레이어만 실제 시뮬레이션**하고, 상대방 화면에는 물리 연산을 완전히 배제한 채 **위치 스냅샷을 Lerp 보간**으로 재현합니다.
+
+
+[내 화면] [상대 화면]
+Rigidbody2D.simulated = true Rigidbody2D.simulated = false
+Collider2D 활성 Collider2D 비활성
+Unity 물리 엔진 계산 스냅샷 수신 → Lerp 이동
+
+
+#### 이벤트 체계
+
+| 이벤트 코드 | 전송 방식 | 설명 |
+|-------------|-----------|------|
+| `EVT_FRUIT_CREATE (106)` | Reliable | 과일 생성(들기) 시 level, 위치, 회전, dropId 전송 |
+| `EVT_FRUIT_DROP (102)` | Reliable | 드롭(놓기) 시 최종 위치/회전 전송 |
+| `EVT_FRUIT_STATE (107)` | **Unreliable** | 0.1초마다 모든 과일의 위치 스냅샷 브로드캐스트 |
+| `EVT_FRUIT_MERGE (105)` | Reliable | 머지 발생 시 survivor/other dropId, 새 레벨 전송 |
+| `EVT_SCORE_UPDATE (103)` | Reliable | 점수 변경 시 전송 |
+| `EVT_GAME_OVER (104)` | Reliable | 게임오버 시 최종 점수 전송 |
+
+> **`EVT_FRUIT_STATE`를 Unreliable로 전송하는 이유**: 0.1초 간격으로 연속 전송되므로 패킷 유실이 발생해도 다음 패킷이 즉시 보정합니다. 재전송 오버헤드를 제거해 지연(latency)을 최소화합니다.
+
+#### dropId 시스템
+과일마다 고유 `dropId`를 부여해 네트워크 양단에서 동일한 과일을 특정합니다. `FruitManager`에서 순차 증가 카운터(`_nextDropId`)로 발급하며, 상대방은 `Dictionary<int, Fruit>` 로 매핑합니다.
+
+#### Lerp 보간 (Fruit.cs)
+```csharp
+// 상대방 과일의 Update()
+if (isOtherPlayerFruit && hasNetworkTarget)
+{
+    transform.localPosition = Vector3.Lerp(
+        transform.localPosition, networkTargetLocalPos, Time.deltaTime * LERP_SPEED); // LERP_SPEED = 20f
+
+    float newRot = Mathf.LerpAngle(currentRot, networkTargetRot, Time.deltaTime * LERP_SPEED);
+    transform.localRotation = Quaternion.Euler(0f, 0f, newRot);
+}
+```
+
+#### Merge 처리
+로컬 과일: 충돌 감지 → 코루틴으로 흡수 애니메이션 → 레벨업
+상대방 과일: 물리·충돌 없음 → EVT_FRUIT_MERGE 수신 즉시 ApplyNetworkMerge() 호출 → 애니메이션 없이 즉시 스프라이트/크기 갱신. 위치는 다음 스냅샷이 자연스럽게 보정
+
+#### 게임 종료 조건
+게임오버 라인(GameOverLine)에 과일이 닿으면 해당 플레이어만 먼저 종료됩니다. 두 플레이어 모두 게임오버가 된 시점에 점수를 비교해 최종 승패를 결정합니다.
+
+먼저 게임오버된 플레이어: 자신의 화면을 회색 처리 후 상대 결과 대기
+모두 게임오버 시: ShowResultByScore(myScore, theirScore) 로 승/패 판정
+
+####씬 전환 — 커튼 애니메이션
+LoadingSceneController가 씬 전환 시 커튼 닫힘/열림 애니메이션을 재생합니다. 멀티 모드 전환은 StartAutoTransitionToMulti() 를 통해 커튼이 완전히 닫힌 뒤 PhotonNetwork.LoadLevel() 을 호출하고, 씬 로드 완료 후 커튼을 자동으로 엽니다.
+
+#### 싱글 플레이 랭킹 시스템
+RankingManager (static class) 가 PlayerPrefs + JsonUtility 를 이용해 로컬 상위 3개 기록을 저장합니다.
+
+게임오버 시 Top 3 진입 여부 자동 판별
+Top 3 진입 시 이름 입력 UI(RankingNameInputUI) 표시 후 등록
+비진입 시 랭킹 조회 화면 바로 표시
+
+#### 물리 기반 과일 합체 시스템 (`Fruit.cs`)
 
 같은 레벨의 과일끼리 충돌 시 합체가 이루어지며, `OnCollisionEnter2D`를 통해 충돌을 감지합니다.
 합체 처리 시 중복 실행을 막기 위해 `isMerge` 플래그를 활용하며, 위치 비교(x, y좌표)를 통해 두 과일 중 어느 쪽이 살아남을지 결정합니다.
@@ -25,51 +110,19 @@
 - 생존 기준: x좌표 비교 시 왼쪽, y좌표 동일 시 아래쪽 과일이 레벨업
 - 레벨업 시 스프라이트 및 `localScale` 변경, 최대 레벨 갱신
 
-### 2. 과일 생성 및 드롭 제어 (`FruitManager.cs`)
 
-마우스 클릭 위치를 `CursorControl.cs`에서 월드 좌표로 변환해 과일 드롭 X좌표를 결정합니다. 생성된 과일은 벽 안쪽 경계(`leftBorder`, `rightBorder`)를 초과하지 않도록 클램핑 처리됩니다.
-
-과일 생성 시 `SizeUpAnim` 코루틴으로 0.1 스케일에서 목표 크기까지 점진적으로 확대되는 등장 애니메이션이 적용됩니다. 다음에 나올 과일 미리보기는 `ShowNextFruitModel()`을 통해 별도 위치에 표시됩니다.
-
-- 드롭 후 1초간 `isReady = false` 처리로 연속 투하 방지 (`InitTime1f` 코루틴)
-- 사운드 채널 배열(`SoundChannels`)을 순환 사용해 다중 효과음 동시 재생 지원
-
-### 3. 게임 오버 판정 시스템 (`GameOverLine.cs`)
-
-화면 상단에 트리거 영역(`GameOverLine`)을 두고, `OnTriggerStay2D`로 과일이 해당 라인에 닿으면 타이머를 시작합니다. 2초(GAME_OVER_TIME) 동안 과일이 계속 라인에 머물면 게임 오버가 발동됩니다.
-
-현재 드롭 중인 과일(`newFruitGameObject`)은 판정에서 제외해 오판정을 방지하며, 과일이 라인에서 벗어나면 리스트에서 제거해 타이머를 초기화합니다.
-
-### 4. 점수 및 로컬 랭킹 시스템 (`RankingManager.cs`, `RankingNameInputUI.cs`)
-
-점수는 합체 시 `(현재 레벨 × scoreStandard)` 공식으로 산출되어 누적됩니다. 게임 오버 시 현재 점수가 상위 3위 안에 드는지 `RankingManager.IsInTop3()`로 확인하며, 해당되면 이름 입력 UI를 표시합니다.
-
-랭킹 데이터는 `RankingEntry`(이름, 점수) 리스트를 `JsonUtility.ToJson()`으로 직렬화하여 `PlayerPrefs`에 저장합니다. 최대 3개 항목만 유지하며, 점수 내림차순으로 정렬됩니다.
-```csharp
-// 랭킹 저장 흐름
-List<RankingEntry> → 정렬(내림차순) → 상위 3개만 유지 → JsonUtility.ToJson → PlayerPrefs.SetString
-```
-
-### 5. 비동기 씬 로딩 + 커튼 트랜지션 (`LoadingSceneController.cs`)
-
-`SceneManager.LoadSceneAsync()`로 백그라운드에서 씬을 로딩하며, `allowSceneActivation = false`로 로딩 완료 후에도 즉시 전환하지 않고 대기합니다. 로딩이 끝나면 커튼 닫힘 애니메이션(`CurtainCloseAnim`)이 재생되고, 마우스 클릭 시 커튼 열림 애니메이션과 함께 씬이 활성화됩니다.
-
-`DontDestroyOnLoad`를 적용해 로딩 컨트롤러가 씬 전환 중에도 파괴되지 않도록 처리했습니다.
-
-### 6. 게임 흐름 제어 (`GameFlowManager.cs`)
-
-게임 오버 발생 시 `Time.timeScale = 0` 대신 모든 과일의 `Rigidbody2D.simulated = false`를 사용해 물리를 일시 정지합니다. 이 방식으로 UI 애니메이션은 정상 작동하면서도 게임 물리만 멈추는 효과를 구현합니다.
-
-랭킹 등록 완료 후 또는 등록 조건 미달 시 각각 다른 콜백(`OnRankingUploadComplete`, `OnSimpleGameOver`)을 거쳐 1초 지연 후 게임 오버 캔버스를 활성화합니다.
-
----
 
 ## 🔑 주요 구현 포인트
 
-- **합체 중복 방지**: `isMerge` 플래그로 동일 과일이 여러 번 합체 처리되는 문제 차단
-- **물리 일시 제어**: 합체 애니메이션 중 `Rigidbody2D.simulated = false`로 물리 비활성화 후 완료 시 재활성화
-- **게임 오버 판정 유예**: 2초 타이머 기반 오버 판정으로 순간적 접촉에 의한 오판정 방지
-- **UI 독립 물리 정지**: `timeScale = 0` 대신 개별 Rigidbody 비활성화로 UI 애니메이션과 게임 물리를 분리
-- **사운드 멀티채널**: 배열 기반 사운드 채널 순환 방식으로 효과음 겹침 재생 처리
-- **로컬 랭킹 영속성**: JSON 직렬화 + PlayerPrefs를 이용한 상위 3위 랭킹 로컬 저장
-- **씬 전환 연출**: 비동기 로딩 + 커튼 애니메이션으로 자연스러운 씬 전환 구현
+- 상대방 과일의 Rigidbody2D.simulated 및 Collider2D를 완전 비활성화해 불필요한 물리 연산 및 로컬 충돌 간섭을 제거
+- 과일 위치 스냅샷을 0.1초 간격으로 Unreliable 전송하여 신뢰성 패킷 대비 지연을 줄이고 연속 전송으로 유실을 자연 보정
+- 각 과일에 dropId를 부여해 네트워크 양단에서 동일 과일을 안정적으로 특정
+- EVT_MATCH_START 이벤트와 Room CustomProperties "MatchStarted" 를 이중으로 전파해 늦은 입장자나 이벤트 유실 상황을 모두 처리
+- hasHandledMatchStart 플래그로 매치 시작 이벤트 중복 처리 방지
+- PhotonNetwork.AutomaticallySyncScene = true 설정으로 방장의 LoadLevel 호출 한 번으로 모든 클라이언트가 동시에 씬 전환
+- FruitManager에서 멀티 전용 이벤트(OnFruitCreated, OnFruitDropped, OnFruitMerged 등)를 C# Action으로 노출해 싱글/멀티 씬 모두 호환되는 구조
+- suppressGameOverUI 플래그로 멀티 모드에서는 싱글용 랭킹 UI를 억제하고 MultiGameManager가 결과를 독립 처리
+- 게임오버를 즉시 공유하지 않고 양쪽 모두 게임오버 후 점수 비교로 승패를 결정해 한 플레이어가 먼저 끝나도 상대방 플레이가 계속되는 구조
+- 상대방 과일의 머지를 물리·충돌 없이 즉시(ApplyNetworkMerge) 처리하고 다음 스냅샷으로 위치 자연 보정
+- PlayerPrefs + JSON 직렬화로 로컬 상위 3개 랭킹을 영속 저장하고 게임오버 시 Top 3 진입 여부를 자동 판별
+- 씬 전환 시 커튼 애니메이션을 DontDestroyOnLoad 오브젝트로 유지해 씬 간 자연스러운 전환 연출
