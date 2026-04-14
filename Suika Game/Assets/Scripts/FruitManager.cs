@@ -136,6 +136,25 @@ public class FruitManager : MonoBehaviour
         OnGameOverTriggered?.Invoke();
         GameOver();
     }
+
+    /// <summary>
+    /// 이벤트 발생 없이 플레이만 즉시 정지. 멀티 결과 화면 표시 시 사용.
+    /// </summary>
+    public void FreezeGame()
+    {
+        isGameOver = true;
+        isGameRun  = false;
+        isReady    = false;
+
+        if (FruitParent != null)
+        {
+            foreach (Rigidbody2D rb in FruitParent.GetComponentsInChildren<Rigidbody2D>())
+                rb.simulated = false;
+        }
+
+        if (groundControl != null)
+            groundControl.isPlayed = false;
+    }
     public bool isGameRun_func()
     {
         return isGameRun;

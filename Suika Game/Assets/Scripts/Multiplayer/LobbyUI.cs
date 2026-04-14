@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.SceneManagement;
 using TMPro;
@@ -7,23 +7,7 @@ using Photon.Realtime;
 using System.Collections.Generic;
 
 /// <summary>
-/// 로비 씬 UI 컨트롤러
-///
-/// [씬 구성 예시]
-/// Canvas
-///   ├─ PanelConnect       (서버 미연결 상태)
-///   │    └─ BtnConnect
-///   ├─ PanelLobby         (로비 진입 후)
-///   │    ├─ InputRoomName
-///   │    ├─ BtnCreate
-///   │    ├─ BtnQuickJoin
-///   │    ├─ ScrollView > Content  (룸 목록)
-///   │    └─ BtnBack
-///   ├─ PanelWaiting       (룸 입장 후 대기)
-///   │    ├─ TxtRoomName
-///   │    ├─ TxtPlayerCount
-///   │    └─ BtnLeave
-///   └─ TxtStatus          (상태 메시지, 항상 표시)
+/// 로비 UI 컨트롤러
 /// </summary>
 public class LobbyUI : MonoBehaviour
 {
@@ -34,12 +18,12 @@ public class LobbyUI : MonoBehaviour
     [Header("로비 패널")]
     [SerializeField] private TMP_InputField inputRoomName;
     [SerializeField] private Button btnCreate;
-    [SerializeField] private Button btnJoinByName; // 방 이름으로 참가
+    [SerializeField] private Button btnJoinByName;
     [SerializeField] private Button btnQuickJoin;
     [SerializeField] private Button btnRefresh;
     [SerializeField] private Button btnBack;
     [SerializeField] private Transform roomListContent;
-    [SerializeField] private GameObject roomItemPrefab; // RoomListItem 프리팹
+    [SerializeField] private GameObject roomItemPrefab;
 
     [Header("대기 패널")]
     [SerializeField] private TMP_Text txtRoomName;
@@ -48,6 +32,9 @@ public class LobbyUI : MonoBehaviour
 
     [Header("공통")]
     [SerializeField] private TMP_Text txtStatus;
+
+    [Header("씬 전환")]
+    [SerializeField] private LoadingSceneController loadingSceneController;
 
     private void Start()
     {
@@ -64,12 +51,12 @@ public class LobbyUI : MonoBehaviour
         PhotonNetworkManager.Instance.OnStatusChanged += UpdateStatus;
         PhotonNetworkManager.Instance.OnRoomListUpdated += OnRoomListUpdated;
         PhotonNetworkManager.Instance.OnError += ShowError;
+        PhotonNetworkManager.Instance.OnMatchFound += OnMatchFound;
 
         ShowPanel(panelLobby);
 
         if (PhotonNetwork.IsConnected && PhotonNetwork.InLobby)
         {
-            // 이미 로비에 있으면 캐시된 목록 즉시 표시
             RefreshRoomList(PhotonNetworkManager.Instance.CachedRoomList);
         }
         else
@@ -85,11 +72,8 @@ public class LobbyUI : MonoBehaviour
         PhotonNetworkManager.Instance.OnStatusChanged -= UpdateStatus;
         PhotonNetworkManager.Instance.OnRoomListUpdated -= OnRoomListUpdated;
         PhotonNetworkManager.Instance.OnError -= ShowError;
+        PhotonNetworkManager.Instance.OnMatchFound -= OnMatchFound;
     }
-
-    // ─────────────────────────────────────────────
-    // 버튼 핸들러
-    // ─────────────────────────────────────────────
 
     private System.Collections.IEnumerator WaitAndShowLobby()
     {
@@ -111,6 +95,7 @@ public class LobbyUI : MonoBehaviour
             ShowError("방 이름을 입력해주세요.");
             return;
         }
+
         PhotonNetworkManager.Instance.JoinRoom(roomName);
         StartCoroutine(WaitAndShowWaiting());
     }
@@ -126,6 +111,23 @@ public class LobbyUI : MonoBehaviour
         yield return new WaitUntil(() => PhotonNetwork.InRoom);
         UpdateWaitingPanel();
         ShowPanel(panelWaiting);
+    }
+
+    private void OnMatchFound()
+    {
+        Debug.Log("[LobbyUI] OnMatchFound -> 커튼 자동 전환 시작");
+
+        if (loadingSceneController == null)
+        {
+            Debug.LogError("[LobbyUI] loadingSceneController가 할당되지 않았습니다. Inspector에서 연결하세요.");
+            PhotonNetworkManager.Instance.TryLoadMultiModeScene();
+            return;
+        }
+
+        loadingSceneController.StartAutoTransitionToMulti(() =>
+        {
+            PhotonNetworkManager.Instance.TryLoadMultiModeScene();
+        });
     }
 
     private void OnClickRefresh()
@@ -145,36 +147,41 @@ public class LobbyUI : MonoBehaviour
         ShowPanel(panelLobby);
     }
 
-    // ─────────────────────────────────────────────
-    // UI 갱신
-    // ─────────────────────────────────────────────
-
     private void UpdateWaitingPanel()
     {
         if (!PhotonNetwork.InRoom) return;
         txtRoomName.text = $"{PhotonNetwork.CurrentRoom.Name}";
-        // txtPlayerCount.text = $"{PhotonNetwork.CurrentRoom.PlayerCount} / {PhotonNetworkManager.MAX_PLAYERS}";
+        if (txtPlayerCount != null)
+            txtPlayerCount.text = $"{PhotonNetwork.CurrentRoom.PlayerCount} / {PhotonNetworkManager.MAX_PLAYERS}";
     }
 
     private void OnRoomListUpdated(List<RoomInfo> roomList)
     {
-        Debug.Log($"[LobbyUI] OnRoomListUpdated 이벤트 수신 - 방 수: {roomList.Count}");
+        Debug.Log($"[LobbyUI] OnRoomListUpdated 수신 - 방 수: {roomList.Count}");
         RefreshRoomList(roomList);
     }
 
     private void RefreshRoomList(List<RoomInfo> roomList)
     {
-        Debug.Log($"[LobbyUI] RefreshRoomList 호출 - roomListContent: {(roomListContent == null ? "NULL" : roomListContent.name)}, roomItemPrefab: {(roomItemPrefab == null ? "NULL" : roomItemPrefab.name)}, 방 수: {roomList.Count}");
+        Debug.Log($"[LobbyUI] RefreshRoomList 호출 - 방 수: {roomList.Count}");
 
-        if (roomListContent == null) { Debug.LogError("[LobbyUI] roomListContent가 비어있습니다! Inspector에서 연결하세요."); return; }
-        if (roomItemPrefab == null) { Debug.LogError("[LobbyUI] roomItemPrefab이 비어있습니다! Inspector에서 연결하세요."); return; }
+        if (roomListContent == null)
+        {
+            Debug.LogError("[LobbyUI] roomListContent가 비어 있습니다. Inspector에서 연결하세요.");
+            return;
+        }
+
+        if (roomItemPrefab == null)
+        {
+            Debug.LogError("[LobbyUI] roomItemPrefab가 비어 있습니다. Inspector에서 연결하세요.");
+            return;
+        }
 
         foreach (Transform child in roomListContent)
             Destroy(child.gameObject);
 
         foreach (RoomInfo info in roomList)
         {
-            Debug.Log($"[LobbyUI]   방 아이템 생성: {info.Name}");
             GameObject item = Instantiate(roomItemPrefab, roomListContent);
             RoomListItem listItem = item.GetComponent<RoomListItem>();
             if (listItem != null)
@@ -199,7 +206,6 @@ public class LobbyUI : MonoBehaviour
         if (txtStatus != null)
             txtStatus.text = message;
 
-        // 대기 패널에서 플레이어 수 실시간 갱신
         if (panelWaiting.activeSelf)
             UpdateWaitingPanel();
     }

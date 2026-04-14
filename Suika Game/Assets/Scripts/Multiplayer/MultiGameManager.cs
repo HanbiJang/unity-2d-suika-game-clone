@@ -342,6 +342,9 @@ public class MultiGameManager : MonoBehaviourPunCallbacks, IOnEventCallback
         if (gameEnded) return;
         gameEnded = true;
 
+        // 결과 화면이 뜨는 순간 로컬 플레이 완전 정지 (승리 시에도 조작 불가)
+        localFruitManager?.FreezeGame();
+
         if (multiResultCanvas != null)
             multiResultCanvas.SetActive(true);
         else
